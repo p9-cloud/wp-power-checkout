@@ -26,7 +26,7 @@ class SettingService {
 
 		self::$script = (object) [
 			'handle' => 'power-checkout-wc-setting-tab',
-			'src'    => Plugin::$url . '/inc/classes/Domains/Settings/Views/dist/index.js',
+			'src'    => Plugin::$url . '/js/dist/main.js',
 			'deps'   => [ 'jquery' ],
 			'ver'    => Plugin::$version,
 			'arg'    => [
@@ -74,7 +74,14 @@ class SettingService {
         return 'wc-settings' === @$_GET['page'] && self::$tab->value === @$_GET['tab']; // phpcs:ignore
 	}
 
-	public static function enqueue_scripts( $hook ): void {
+	/**
+	 * 載入腳本
+	 *
+	 * @param string $hook  當前頁面的 hook 名稱
+	 *
+	 * @return void
+	 */
+	public static function enqueue_scripts( $hook ): void { // phpcs:ignore
         if(!self::is_current_tab()) { // phpcs:ignore
 			return;
 		}

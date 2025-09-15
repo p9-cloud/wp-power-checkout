@@ -1,53 +1,32 @@
-import react from '@vitejs/plugin-react'
-import tsconfigPaths from 'vite-tsconfig-paths'
-import alias from '@rollup/plugin-alias'
-import path from 'path'
-import { defineConfig } from 'vite'
-
-// import liveReload from 'vite-plugin-live-reload'
-
-import { v4wp } from '@kucrut/vite-for-wp'
+import {fileURLToPath, URL} from 'node:url'
+import {defineConfig} from 'vite'
+import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
-	server: {
-		port: 5181,
-		cors: {
-			origin: '*',
-		},
-		fs: {
-			allow: ['./', '../../packages'],
-		},
-	},
-	plugins: [
-		alias(),
-		react(),
-		tsconfigPaths(),
-
-		// liveReload(__dirname + '/**/*.php'), // Optional, if you want to reload page on php changed
-
-		v4wp({
-			input: 'js/src/main.tsx', // Optional, defaults to 'src/main.js'.
-			outDir: 'js/dist', // Optional, defaults to 'dist'.
-		}),
-	],
-
-	// build: {
-	// 	rollupOptions: {
-	// 		output: {
-	// 			// 修改入口檔案名稱
-	// 			entryFileNames: 'index.js',
-
-	// 			// 修改代碼分割後的檔案名稱
-	// 			chunkFileNames: '[name]-[hash].js',
-
-	// 			// 修改資源檔案名稱
-	// 			assetFileNames: '[name]-[hash].[ext]',
-	// 		},
-	// 	},
-	// },
-	resolve: {
-		alias: {
-			'@': path.resolve(__dirname, 'js/src'),
-		},
-	},
+    css: {
+        preprocessorOptions: {
+            scss: {api: 'modern-compiler'},
+        }
+    },
+    plugins: [
+        vue(),
+        vueDevTools()
+    ],
+    build: {
+        outDir: 'js/dist',
+        rollupOptions: {
+            input: 'js/src/main.ts',
+            output: {
+                entryFileNames: 'main.js',
+                format: 'iife',
+                name: 'settings'
+            }
+        },
+    },
+    resolve: {
+        alias: {
+            '@': fileURLToPath(new URL('./js/src', import.meta.url))
+        },
+    },
 })
