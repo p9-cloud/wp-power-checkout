@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs;
 
+use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Settings\DTOs\SettingsDTO as PowerCheckoutSettings;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
+use J7\PowerCheckout\Domains\Payment\Contracts\IGatewaySettings;
 
 /**
  * Shopline 跳轉支付設定，單例
  */
-final class SettingsDTO extends DTO {
+final class SettingsDTO extends DTO implements IGatewaySettings {
 
 	public const KEY = 'ShoplinePayment';
 
@@ -69,7 +72,7 @@ final class SettingsDTO extends DTO {
 		}
 
 		if ( isset( $args['signKey'] ) ) {
-			$args['signKey'] = mb_convert_encoding($args['signKey'], 'UTF-8', 'auto');
+			$args['signKey'] = \mb_convert_encoding($args['signKey'], 'UTF-8', 'auto');
 		}
 
 		self::$settings_instance = new self( $args);
@@ -79,6 +82,11 @@ final class SettingsDTO extends DTO {
 	/**  @return self 取得實例，單例 */
 	public static function instance(): self {
 		return PowerCheckoutSettings::instance()->payments->ShoplinePayment;
+	}
+
+	/** @return class-string<IGateway> 取得此付款方式的 ID */
+	public static function get_gateway_id(): string {
+		return RedirectGateway::ID;
 	}
 
 	/**

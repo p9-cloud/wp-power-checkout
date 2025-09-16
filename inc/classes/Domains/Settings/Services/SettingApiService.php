@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
 use _PHPStan_bc6352b8e\Nette\Neon\Exception;
+use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
 use J7\WpUtils\Classes\ApiBase;
 use J7\PowerCheckout\Domains\Settings\DTOs\SettingsDTO as PowerCheckoutSettings;
 use J7\WpUtils\Traits\SingletonTrait;
@@ -72,7 +73,8 @@ final class SettingApiService extends ApiBase {
 			throw new Exception('get_service_class method does not exist on ' . $gateway::class);
 		}
 
-		$service_class = $gateway->get_service_class();
+		/** @var IGateway $gateway */
+		$service_class = $gateway::get_service_class();
 		$service_class::toggle();
 
 		return new \WP_REST_Response(

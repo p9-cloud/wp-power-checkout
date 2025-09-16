@@ -5,6 +5,7 @@ declare (strict_types = 1);
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
 use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
+use J7\PowerCheckout\Domains\Payment\Contracts\IGatewayService;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
@@ -27,7 +28,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 		parent::__construct();
 	}
 
-	/** @return string 服務類 */
+	/** @return class-string<IGatewayService> 服務類 */
 	public static function get_service_class(): string {
 		return RedirectGatewayService::class;
 	}
