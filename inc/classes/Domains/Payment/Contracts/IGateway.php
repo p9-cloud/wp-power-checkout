@@ -6,9 +6,6 @@ namespace J7\PowerCheckout\Domains\Payment\Contracts;
 
 interface IGateway {
 
-	/** @return class-string<IGatewayService> 服務類 */
-	public static function get_service_class(): string;
-
 	/**
 	 * 支付邏輯
 	 *

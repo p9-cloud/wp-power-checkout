@@ -8,7 +8,7 @@ namespace J7\PowerCheckout\Domains\Payment;
 final class Loader {
 	/** Register hooks */
 	public static function register_hooks(): void {
-		ShoplinePayment\Services\RedirectGatewayService::register_hooks();
+		ShoplinePayment\Services\RegisterIntegration::register_hooks();
 		EcpayAIO\Core\Init::register_hooks();
 	}
 }

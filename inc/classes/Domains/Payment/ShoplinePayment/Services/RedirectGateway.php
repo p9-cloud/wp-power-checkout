@@ -5,7 +5,7 @@ declare (strict_types = 1);
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
 use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
-use J7\PowerCheckout\Domains\Payment\Contracts\IGatewayService;
+use J7\PowerCheckout\Domains\Payment\Contracts\IIntegration;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
@@ -17,7 +17,7 @@ use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
 final class RedirectGateway extends PaymentGateway implements IGateway {
 
 	/** @var string 付款方式 ID */
-	public const ID = RedirectGatewayService::PREFIX . 'redirect';
+	public const ID = RegisterIntegration::PREFIX . 'redirect';
 
 	/** @var string 付款方式 ID */
 	public $id = self::ID;
@@ -26,11 +26,6 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	public function __construct() {
 		$this->payment_label = __( 'Shopline Payment (Redirect)', 'power_checkout' );
 		parent::__construct();
-	}
-
-	/** @return class-string<IGatewayService> 服務類 */
-	public static function get_service_class(): string {
-		return RedirectGatewayService::class;
 	}
 
 	/**

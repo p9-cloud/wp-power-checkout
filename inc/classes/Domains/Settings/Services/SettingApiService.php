@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
-use _PHPStan_bc6352b8e\Nette\Neon\Exception;
-use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
 use J7\WpUtils\Classes\ApiBase;
-use J7\PowerCheckout\Domains\Settings\DTOs\SettingsDTO as PowerCheckoutSettings;
 use J7\WpUtils\Traits\SingletonTrait;
+use J7\PowerCheckout\Domains\Payment\Shared\Enums\PaymentIntegration;
 
 /**
  * 設定相關的 REST API
@@ -24,11 +22,11 @@ final class SettingApiService extends ApiBase {
 	/** @var array 已註冊的 API 列表 */
 	protected $apis = [
 		[
-			'endpoint' => 'settings',
+			'endpoint' => 'integrations',
 			'method'   => 'get',
 		],
 		[
-			'endpoint' => 'toggle-gateway',
+			'endpoint' => 'toggle-integration',
 			'method'   => 'post',
 		],
 	];
@@ -39,48 +37,41 @@ final class SettingApiService extends ApiBase {
 	}
 
 	/**
-	 * 取得設定
+	 * 取得 integrations 設定
 	 *
 	 * @param \WP_REST_Request $request Request.
 	 *
 	 * @return \WP_REST_Response
 	 * @phpstan-ignore-next-line
 	 */
-	public function get_settings_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		return new \WP_REST_Response( PowerCheckoutSettings::instance()->to_array(), 200 );
+	public function get_integrations_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$integrations = PaymentIntegration::get_integrations();
+
+		$integrations_array = \array_map(static fn( $integration ) => $integration->to_array(), $integrations);
+
+		return new \WP_REST_Response( $integrations_array, 200 );
 	}
 
 	/**
-	 * 開關 Gateway
+	 * 開關 Integration
 	 *
 	 * @param \WP_REST_Request $request Request.
 	 *
 	 * @return \WP_REST_Response
-	 * @throws \_PHPStan_bc6352b8e\Nette\Neon\Exception 錯誤
-	 * @throw Exception 如果 gateway_id 無效或其他錯誤
+	 * @throw Exception 如果 integration_key 無效或其他錯誤
 	 * @phpstan-ignore-next-line
 	 */
-	public function post_toggle_gateway_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$gateway_id = $request->get_param( 'gateway_id' );
-		$gateways   = \WC()->payment_gateways()->get_available_payment_gateways();
-		if ( !isset( $gateways[ $gateway_id ] ) ) {
-			throw new Exception('Invalid gateway ID');
-		}
-		$gateway = $gateways[ $gateway_id ];
+	public function post_toggle_integration_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$integration_key  = $request->get_param( 'integration_key' );
+		$integration_enum = PaymentIntegration::from( $integration_key);
 
-		// 檢查服務類是否存在
-		if (!\method_exists($gateway, 'get_service_class')) {
-			throw new Exception('get_service_class method does not exist on ' . $gateway::class);
-		}
-
-		/** @var IGateway $gateway */
-		$service_class = $gateway::get_service_class();
-		$service_class::toggle();
+		$integration_enum->toggle();
 
 		return new \WP_REST_Response(
 			[
-				'status'     => 'success',
-				'gateway_id' => $gateway_id,
+				'code'    => 'success',
+				'message' => 'Integration toggled successfully',
+				'data'    => $integration_enum->get_integration()->to_array(),
 			],
 			200
 			);

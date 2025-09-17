@@ -6,11 +6,11 @@ import {IGateway} from '@/App.vue';
 const props = withDefaults(defineProps<IGateway>(), {
   description: '',
   icon_url: '',
-  active: false
+  enabled: false
 })
 
 
-const value = ref<boolean>(props.active)
+const value = ref<boolean>(props.enabled)
 </script>
 
 

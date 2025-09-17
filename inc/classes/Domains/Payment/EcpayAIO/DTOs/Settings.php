@@ -12,7 +12,7 @@ use J7\PowerCheckout\Domains\Settings\DTOs\SettingsDTO as PowerCheckoutSettings;
  */
 final class Settings extends DTO {
 
-	const KEY = 'EcpayAIO';
+	const INTEGRATION_KEY = 'EcpayAIO';
 	/** @var self|null 單例 */
 	protected static $settings_instance = null;
 	/** @var 'prod' | 'test' 模式 */

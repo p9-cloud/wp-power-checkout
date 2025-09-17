@@ -11,8 +11,22 @@ use J7\PowerCheckout\Plugin;
  */
 class SettingTabService {
 
+	/** @var string 儲存的 option_name */
+	private const OPTION_NAME = 'power_checkout_settings';
+
 	/** @var array{0:string, 1:string} 設定分頁 [value, label] */
 	private static array $tab;
+
+	/** @return array 取得設定 */
+	public static function get_settings(): array {
+		$settings = \get_option( self::OPTION_NAME, [] );
+		return \is_array( $settings ) ? $settings : [];
+	}
+
+	/** @param array $value 儲存設定 */
+	public static function save_settings( array $value ): void {
+		\update_option( self::OPTION_NAME, $value );
+	}
 
 
 	/** Register hooks */

@@ -3,7 +3,7 @@ export interface IGateway {
   name: string
   description?: string
   icon_url?: string
-  active?: boolean
+  enabled?: boolean
 }
 
 enum ETabKey {

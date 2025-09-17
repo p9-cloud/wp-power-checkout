@@ -5,16 +5,20 @@ declare (strict_types = 1);
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
-use J7\PowerCheckout\Domains\Payment\Contracts\IGatewayService;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
+use J7\PowerCheckout\Domains\Payment\Contracts\IIntegration;
+use J7\PowerCheckout\Domains\Payment\Shared\Enums\PaymentIntegration;
 use J7\WpUtils\Classes\General;
 use J7\PowerCheckout\Domains\Payment\Shared\BlocksIntegration;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
 
 /**
- * Init 初始化付款方式 單例
+ * Payment Integrations (API 為 base)
+ * 整合不同的 Payment Gateway
+ * 例如 ECPayAIO 裡面有 ATM, Credit, CVS 等等 Payment Gateway
  */
-final class RedirectGatewayService implements IGatewayService {
+final class RegisterIntegration implements IIntegration {
+
+
 
 	/** @var string 付款方式 callback 的 action 前綴 */
 	public const PREFIX = 'pc_slp_';
@@ -25,8 +29,9 @@ final class RedirectGatewayService implements IGatewayService {
 
 	/** Register hooks */
 	public static function register_hooks(): void {
-		$settings = SettingsDTO::instance();
-		if (!$settings->enabled) {
+		$integration = PaymentIntegration::SHOPLINE_PAYMENT->get_integration();
+
+		if (!$integration->enabled) {
 			return;
 		}
 

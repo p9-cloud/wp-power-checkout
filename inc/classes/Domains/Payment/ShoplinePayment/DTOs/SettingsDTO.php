@@ -4,25 +4,17 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs;
 
-use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
+use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\WpUtils\Classes\DTO;
-use J7\PowerCheckout\Domains\Settings\DTOs\SettingsDTO as PowerCheckoutSettings;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
-use J7\PowerCheckout\Domains\Payment\Contracts\IGatewaySettings;
 
 /**
  * Shopline 跳轉支付設定，單例
  */
-final class SettingsDTO extends DTO implements IGatewaySettings {
+final class SettingsDTO extends DTO {
 
-	public const KEY = 'ShoplinePayment';
 
-	/** @var self|null 單例 */
-	protected static ?SettingsDTO $settings_instance = null;
-
-	/** @var bool $enabled 是否啟用 */
-	public bool $enabled = false;
 	/** @var string $mode Enums\Mode::value 模式  */
 	public string $mode;
 	/** @var string SLP 平台 ID，平台特店必填，平台特店底下會有子特店 */
@@ -48,17 +40,14 @@ final class SettingsDTO extends DTO implements IGatewaySettings {
 		'ChaileaseBNPL',
 	];
 
-	/** 創建實例，單例
+	/** 創建實例
 	 *
-	 * @param array $args 設定 @return self
-	 *
-	 * @return \J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO
+	 * @return self
 	 * @throws \Exception 如果驗證失敗
 	 */
-	public static function create( array $args = [] ): self {
-		if (self::$settings_instance) {
-			return self::$settings_instance;
-		}
+	public static function instance(): self {
+		$settings = SettingTabService::get_settings();
+		$args     = $settings[ RedirectGateway::class ] ?? [];
 
 		$mode = $args['mode'] ?? Enums\Mode::TEST->value;
 		if (Enums\Mode::TEST->value === $mode) {
@@ -75,19 +64,9 @@ final class SettingsDTO extends DTO implements IGatewaySettings {
 			$args['signKey'] = \mb_convert_encoding($args['signKey'], 'UTF-8', 'auto');
 		}
 
-		self::$settings_instance = new self( $args);
-		return self::$settings_instance;
+		return new self( $args);
 	}
 
-	/**  @return self 取得實例，單例 */
-	public static function instance(): self {
-		return PowerCheckoutSettings::instance()->payments->ShoplinePayment;
-	}
-
-	/** @return class-string<IGateway> 取得此付款方式的 ID */
-	public static function get_gateway_id(): string {
-		return RedirectGateway::ID;
-	}
 
 	/**
 	 * 自訂驗證邏輯

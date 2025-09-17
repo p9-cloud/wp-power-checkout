@@ -6,7 +6,7 @@ namespace J7\PowerCheckout\Domains\Payment\Contracts;
 
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 
-interface IGatewayService {
+interface IIntegration {
 
 	/** 開關 GateWay */
 	public static function toggle(): void;
