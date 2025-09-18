@@ -4,64 +4,32 @@ declare (strict_types = 1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
-use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
-use J7\PowerCheckout\Domains\Payment\Contracts\IIntegration;
-use J7\PowerCheckout\Domains\Payment\Shared\Enums\PaymentIntegration;
-use J7\WpUtils\Classes\General;
-use J7\PowerCheckout\Domains\Payment\Shared\BlocksIntegration;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
+use J7\PowerCheckout\Shared\Abstracts\BaseRegisterIntegration;
+use J7\PowerCheckout\Shared\Enums\DomainType;
+use J7\PowerCheckout\Utils\IntegrationUtils;
 
 /**
  * Payment Integrations (API 為 base)
  * 整合不同的 Payment Gateway
  * 例如 ECPayAIO 裡面有 ATM, Credit, CVS 等等 Payment Gateway
  */
-final class RegisterIntegration implements IIntegration {
+final class RegisterIntegration extends BaseRegisterIntegration {
 
+	/** @var string* Integration KEY 唯一識別 */
+	public static string $key = 'shopline_payment';
 
+	/** @var string* Integration 名稱 */
+	public static string $name = 'Shopline Payment';
 
-	/** @var string 付款方式 callback 的 action 前綴 */
-	public const PREFIX = 'pc_slp_';
+	/** @var string Integration 描述 */
+	public static string $description = '';
 
-	/** TODO 開關 GateWay */
-	public static function toggle(): void {
-	}
+	/** @var string Integration 圖示 URL */
+	public static string $icon_url = 'https://img.shoplineapp.com/media/image_clips/62297669a344ad002979d725/original.png';
 
 	/** Register hooks */
 	public static function register_hooks(): void {
-		$integration = PaymentIntegration::SHOPLINE_PAYMENT->get_integration();
-
-		if (!$integration->enabled) {
-			return;
-		}
-
-		WebHook::instance();
-		// 添加付款方式
-		\add_filter( 'woocommerce_payment_gateways', [ __CLASS__ , 'add_method' ] );
-
-		// 整合區塊結帳
-		\add_action( 'woocommerce_blocks_payment_method_type_registration', [ __CLASS__, 'register_checkout_blocks' ] );
-	}
-
-	/** 添加付款方式 @param array<string> $methods 付款方式 @return array<string> */
-	public static function add_method( array $methods ): array {
-		$methods[] = RedirectGateway::class;
-		return $methods;
-	}
-
-	/** 註冊區塊結帳支援 */
-	public static function register_checkout_blocks( PaymentMethodRegistry $payment_method_registry ): void {
-		if (!\class_exists('\Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {
-			return;
-		}
-
-		$gateways = \WC()->payment_gateways()->payment_gateways;
-
-		$gateway = General::array_find($gateways, static fn( $gateway ) => $gateway->id === RedirectGateway::ID);
-		if (!$gateway) {
-			return;
-		}
-
-		$payment_method_registry->register(new BlocksIntegration($gateway));
+		IntegrationUtils::register(__CLASS__, DomainType::PAYMENTS->value);
+		RegisterGateway::register_hooks();
 	}
 }

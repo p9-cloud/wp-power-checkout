@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
+use _PHPStan_bc6352b8e\Nette\Neon\Exception;
+use J7\PowerCheckout\Utils\IntegrationUtils;
 use J7\WpUtils\Classes\ApiBase;
 use J7\WpUtils\Traits\SingletonTrait;
-use J7\PowerCheckout\Domains\Payment\Shared\Enums\PaymentIntegration;
 
 /**
  * 設定相關的 REST API
@@ -45,7 +46,7 @@ final class SettingApiService extends ApiBase {
 	 * @phpstan-ignore-next-line
 	 */
 	public function get_integrations_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$integrations = PaymentIntegration::get_integrations();
+		$integrations = IntegrationUtils::get_integrations();
 
 		$integrations_array = \array_map(static fn( $integration ) => $integration->to_array(), $integrations);
 
@@ -62,16 +63,20 @@ final class SettingApiService extends ApiBase {
 	 * @phpstan-ignore-next-line
 	 */
 	public function post_toggle_integration_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$integration_key  = $request->get_param( 'integration_key' );
-		$integration_enum = PaymentIntegration::from( $integration_key);
+		$integration_key = $request->get_param( 'integration_key' );
+		$integration     = IntegrationUtils::get_integration( $integration_key);
 
-		$integration_enum->toggle();
+		if (!$integration) {
+			throw new Exception("Can't find Integration with {$integration_key} key");
+		}
+
+		$integration->toggle();
 
 		return new \WP_REST_Response(
 			[
 				'code'    => 'success',
 				'message' => 'Integration toggled successfully',
-				'data'    => $integration_enum->get_integration()->to_array(),
+				'data'    => IntegrationUtils::get_integration($integration_key)?->to_array(),
 			],
 			200
 			);

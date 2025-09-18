@@ -27,7 +27,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	public $id;
 
 	/** @var string 付款方式 icon */
-	public $icon;
+	public $icon = '';
 
 	/** @var bool 是否再結帳頁顯示自訂欄位 */
 	public $has_fields = false;
