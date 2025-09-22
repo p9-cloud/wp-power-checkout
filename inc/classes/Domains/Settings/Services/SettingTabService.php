@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
 use J7\PowerCheckout\Plugin;
+use J7\PowerCheckout\Utils\Base;
 
 /**
  * WooCommerce 設定分頁服務
@@ -84,8 +85,9 @@ class SettingTabService {
         if(!self::is_current_tab()) { // phpcs:ignore
 			return;
 		}
+		$handle = 'power-checkout-wc-setting-tab';
 		\wp_enqueue_script(
-			'power-checkout-wc-setting-tab',
+			$handle,
 			Plugin::$url . '/js/dist/index.js',
 			[ 'jquery' ],
 			Plugin::$version,
@@ -95,10 +97,35 @@ class SettingTabService {
 			]
 			);
 
-		Plugin::instance()->add_module_handle( 'power-checkout-wc-setting-tab');
+		$obj_name = Plugin::$snake . '_data'; // power_checkout_data
+
+		$post_id   = \get_the_ID();
+		$permalink = $post_id ? \get_permalink( $post_id ) : '';
+
+		\wp_localize_script(
+			$handle,
+			$obj_name,
+			[
+				'env' => [
+					'SITE_URL'        => \untrailingslashit( \site_url() ),
+					'API_URL'         => \untrailingslashit( \esc_url_raw( \rest_url() ) ),
+					'CURRENT_USER_ID' => \get_current_user_id(),
+					'CURRENT_POST_ID' => (int) $post_id,
+					'PERMALINK'       => \untrailingslashit( $permalink ),
+					'APP_NAME'        => Plugin::$app_name,
+					'KEBAB'           => Plugin::$kebab,
+					'SNAKE'           => Plugin::$snake,
+					'NONCE'           => \wp_create_nonce( 'wp_rest' ),
+					'APP1_SELECTOR'   => Base::APP1_SELECTOR,
+				],
+
+			]
+			);
+
+		Plugin::instance()->add_module_handle( $handle);
 
 		\wp_enqueue_style(
-		'power-checkout-wc-setting-tab',
+			$handle,
 		Plugin::$url . '/js/dist/index.css',
 		[],
 		Plugin::$version,

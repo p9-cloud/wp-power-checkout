@@ -1,6 +1,6 @@
 import {createApp} from 'vue'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import ElementPlus from 'element-plus'
+import {VueQueryPlugin, QueryClient} from '@tanstack/vue-query'
 import 'element-plus/dist/index.css'
 import './index.css'
 import App from './App.vue'
@@ -25,9 +25,20 @@ form.appendChild(div);
 
 // Mount Vue app
 const app = createApp(App)
-// 引入 icons
-// for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-//     app.component(key, component)
-// }
 app.use(ElementPlus)
+
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 15 * 60 * 1000,     // 15 分鐘內視為新鮮
+            gcTime: 15 * 60 * 1000, // 快取保留 15 分鐘
+            retry: 0,                 // 最多重試 0 次
+            refetchOnWindowFocus: false // 禁用視窗聚焦時重新請求
+        },
+        mutations: {
+            retry: 0 // mutation 失敗不重試次
+        }
+    }
+})
+app.use(VueQueryPlugin, {queryClient})
 app.mount(`#${CONTAINER_ID}`)
