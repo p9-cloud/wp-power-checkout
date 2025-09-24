@@ -20,7 +20,7 @@ final class RegisterGateway implements IRegisterGateway {
 
 	/** Register hooks */
 	public static function register_hooks(): void {
-		$integration = IntegrationUtils::get_integration( RegisterIntegration::$key);
+		$integration = IntegrationUtils::get_integration( RegisterIntegration::$integration_key);
 
 		if (!$integration?->enabled) {
 			return;

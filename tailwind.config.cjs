@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 // eslint-disable-next-line no-undef
 module.exports = {
-    // important: '.tailwind',  // you have to use tailwindcss inside a .tailwind class container, or just type true.
+    // important: '#tw',  // you have to use tailwindcss inside a .tailwind class container, or just type true.
     corePlugins: {
         preflight: false,
     },

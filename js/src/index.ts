@@ -2,6 +2,7 @@ import {createApp} from 'vue'
 import ElementPlus from 'element-plus'
 import {VueQueryPlugin, QueryClient} from '@tanstack/vue-query'
 import 'element-plus/dist/index.css'
+import router from './router'
 import './index.css'
 import App from './App.vue'
 
@@ -25,6 +26,7 @@ form.appendChild(div);
 
 // Mount Vue app
 const app = createApp(App)
+app.use(router)
 app.use(ElementPlus)
 
 const queryClient = new QueryClient({

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import {API_URL, NONCE} from '@/utils/env'
+import {ElNotification} from "element-plus";
 
 
 const apiClient = axios.create({
@@ -11,28 +12,34 @@ const apiClient = axios.create({
     },
 });
 
-// Request 攔截器
-apiClient.interceptors.request.use(
-    config => {
-        // 例如加上 token
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    error => Promise.reject(error)
-);
 
 // Response 攔截器
 apiClient.interceptors.response.use(
     // 成功處理
     (response) => {
+        const method = (response.config.method || 'get').toUpperCase()
+        if (method === 'GET') {
+            return response
+        }
+
+        const message = response?.data?.message
+
+        if (!message) {
+            return response
+        }
+
+        ElNotification({
+            title: "成功",
+            message,
+            position: 'bottom-right',
+            type: 'success',
+        })
         return response
     },
 
     // 錯誤處理
     (error) => {
+        console.log(error.response)
         if (error.response) {
             // 伺服器有響應但狀態碼表示錯誤
             switch (error.response.status) {
@@ -54,6 +61,18 @@ apiClient.interceptors.response.use(
             // 設定請求時發生錯誤
             console.error('請求配置錯誤:', error.message)
         }
+
+        const message = error.response?.data?.message
+        if (!message) {
+            return Promise.reject(error) // 會被捕獲然後發送通知
+        }
+
+        ElNotification({
+            title: "發生 API 錯誤",
+            message,
+            position: 'bottom-right',
+            type: 'error',
+        })
 
         // 返回錯誤
         return Promise.reject(error) // 會被捕獲然後發送通知

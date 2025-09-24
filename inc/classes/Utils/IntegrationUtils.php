@@ -32,11 +32,11 @@ abstract class IntegrationUtils {
 
 	/** @return void invalidate  */
 	public static function invalidate( IntegrationDTO $integration ): void {
-		unset(self::$integrations[ $integration->key ]);
+		unset(self::$integrations[ $integration->integration_key ]);
 
-		$new_integration = new IntegrationDTO(\wp_parse_args(self::get_settings($integration->key), $integration->to_array()));
+		$new_integration = new IntegrationDTO(\wp_parse_args( self::get_settings($integration->integration_key), $integration->to_array()));
 
-		self::$integrations[ $new_integration->key ] = $new_integration;
+		self::$integrations[ $new_integration->integration_key ] = $new_integration;
 	}
 
 	/**
@@ -60,17 +60,17 @@ abstract class IntegrationUtils {
 	 */
 	public static function register( string $class_name, string $domain_type ): void {
 
-		$key = $class_name::$key;
+		$key = $class_name::$integration_key;
 
 		$integration = new IntegrationDTO(
 			\wp_parse_args(
 				self::get_settings($key),
 				[
-					'key'         => $key,
-					'name'        => $class_name::$name,
-					'description' => $class_name::$description,
-					'icon_url'    => $class_name::$icon_url,
-					'domain_type' => $domain_type,
+					'integration_key' => $key,
+					'name'            => $class_name::$name,
+					'description'     => $class_name::$description,
+					'icon_url'        => $class_name::$icon_url,
+					'domain_type'     => $domain_type,
 				]
 				)
 		);

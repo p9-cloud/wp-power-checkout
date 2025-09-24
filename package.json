@@ -31,17 +31,20 @@
     "@power/eslint-config": "workspace:*",
     "@power/tailwind-config": "workspace:*",
     "@power/typescript-config": "workspace:*",
+    "@types/postcss-prefix-selector": "^1.16.3",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/tsconfig": "^0.8.1",
     "eslint-plugin-vue": "^10.4.0",
+    "postcss-prefix-selector": "^2.1.1",
     "vite-plugin-vue-devtools": "^8.0.1"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "@tanstack/vue-query": "^5.89.0",
     "element-plus": "^2.11.2",
-    "vue": "^3.5.21"
+    "vue": "^3.5.21",
+    "vue-router": "^4.5.1"
   }
 }

@@ -16,7 +16,7 @@ use J7\PowerCheckout\Utils\IntegrationUtils;
 final class IntegrationDTO extends DTO {
 
 	/** @var string* Integration KEY 唯一識別 */
-	public string $key;
+	public string $integration_key;
 
 	/** @var string* Integration 名稱 */
 	public string $name;
@@ -35,8 +35,8 @@ final class IntegrationDTO extends DTO {
 
 	/** @return void 切換 Integration 開關 */
 	public function toggle(): void {
-		$settings               = SettingTabService::get_settings();
-		$settings[ $this->key ] = [
+		$settings                           = SettingTabService::get_settings();
+		$settings[ $this->integration_key ] = [
 			'enabled' => !$this->enabled,
 		];
 		SettingTabService::save_settings($settings);
@@ -65,7 +65,7 @@ final class IntegrationDTO extends DTO {
 	 */
 	protected function validate(): void {
 		// 用 regex 判斷 $key 是否包含 A-Za-z0-9_
-		if (!\preg_match('/^[A-Za-z0-9_]+$/', $this->key)) {
+		if (!\preg_match('/^[A-Za-z0-9_]+$/', $this->integration_key)) {
 			throw new \Exception('integration $key 只能包含英文數字以及底線');
 		}
 

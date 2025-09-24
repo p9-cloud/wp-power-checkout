@@ -60,7 +60,7 @@ final class SettingApiService extends ApiBase {
 	 * @throws \Exception 如果 integration_key 無效或其他錯誤
 	 */
 	public function post_toggle_integration_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$integration_key = $request->get_param( 'integration_key' );
+		$integration_key = (string) $request->get_param( 'integration_key' );
 		$integration     = IntegrationUtils::get_integration( $integration_key);
 
 		if (!$integration) {
@@ -69,11 +69,14 @@ final class SettingApiService extends ApiBase {
 
 		$integration->toggle();
 
+		$updated_integration = IntegrationUtils::get_integration($integration_key);
+		$toggle_text         = $updated_integration?->enabled ? '啟用' : '禁用';
+
 		return new \WP_REST_Response(
 			[
 				'code'    => 'success',
-				'message' => 'Integration toggled successfully',
-				'data'    => IntegrationUtils::get_integration($integration_key)?->to_array(),
+				'message' => "{$updated_integration?->name} {$toggle_text}成功",
+				'data'    => $updated_integration?->to_array(),
 			],
 			200
 			);

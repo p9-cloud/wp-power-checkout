@@ -15,7 +15,7 @@ enum CallBack: string {
 
 	/** @return string action 取得 WC API action name */
 	public function action(): string {
-		return 'woocommerce_api_' . RegisterIntegration::$key . '_' . $this->value;
+		return 'woocommerce_api_' . RegisterIntegration::$integration_key . '_' . $this->value;
 	}
 
 	/** @return string action 取得 WC API callback name */
@@ -25,6 +25,6 @@ enum CallBack: string {
 
 	/** @return string action 取得 WC API endpoint */
 	public function endpoint(): string {
-		return \WC()->api_request_url( RegisterIntegration::$key . '_' . $this->value, true );
+		return \WC()->api_request_url( RegisterIntegration::$integration_key . '_' . $this->value, true );
 	}
 }

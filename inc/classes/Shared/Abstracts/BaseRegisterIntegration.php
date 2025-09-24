@@ -6,7 +6,7 @@ namespace J7\PowerCheckout\Shared\Abstracts;
 
 abstract class BaseRegisterIntegration {
 	/** @var string* Integration KEY 唯一識別 */
-	public static string $key;
+	public static string $integration_key;
 
 	/** @var string* Integration 名稱 */
 	public static string $name;

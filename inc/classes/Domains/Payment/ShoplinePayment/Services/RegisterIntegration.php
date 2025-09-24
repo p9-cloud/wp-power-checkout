@@ -16,7 +16,7 @@ use J7\PowerCheckout\Utils\IntegrationUtils;
 final class RegisterIntegration extends BaseRegisterIntegration {
 
 	/** @var string* Integration KEY 唯一識別 */
-	public static string $key = 'shopline_payment';
+	public static string $integration_key = 'shopline_payment';
 
 	/** @var string* Integration 名稱 */
 	public static string $name = 'Shopline Payment';

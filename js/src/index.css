@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+#power-checkout-wc-setting-app {
+
+    /* wp-admin 後台 input 會有預設的 Style */
+
+    input {
+        padding: 0;
+        line-height: var(--el-input-inner-height);
+        color: var(--el-input-text-color, var(--el-text-color-regular));
+        border: none;
+        box-shadow: none;
+
+        &,
+        &:focus {
+            outline: none;
+        }
+    }
+}

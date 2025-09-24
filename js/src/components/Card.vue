@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import {ref} from 'vue'
 import {Setting} from "@element-plus/icons-vue";
-import {IGateway} from '@/App.vue';
+import {useMutation} from '@tanstack/vue-query'
+import {IGateway} from '@/types';
+import apiClient from '@/api'
 
 const props = withDefaults(defineProps<IGateway>(), {
   description: '',
@@ -9,8 +11,24 @@ const props = withDefaults(defineProps<IGateway>(), {
   enabled: false
 })
 
+const enabled = ref<boolean>(props.enabled)
 
-const value = ref<boolean>(props.enabled)
+const {mutateAsync: toggleIntegration, isPending} = useMutation({
+  mutationFn: async () => {
+    return apiClient.post('toggle-integration', {integration_key: props.integration_key})
+  }
+})
+
+// 當 switch 改變時觸發 mutation
+const handleChange: () => Promise<boolean> = async () => {
+  try {
+    await toggleIntegration();
+    return true;// 成功 → 允許切換
+  } catch (e) {
+    return false;// 失敗 → 阻止切換
+  }
+}
+
 </script>
 
 
@@ -35,13 +53,17 @@ const value = ref<boolean>(props.enabled)
       <div class="flex justify-between items-center">
         <div class="flex items-center gap-x-2">
           <el-switch
-              v-model="value"
+              v-model="enabled"
+              :before-change="handleChange"
+              :loading="isPending"
               size="small"
           />
-          <span>{{ value ? 'Enabled' : 'Disabled' }}</span>
+          <span>{{ enabled ? 'Enabled' : 'Disabled' }}</span>
         </div>
         <div>
-          <Setting v-if="value" class="text-gray-400 size-5 cursor-pointer"/>
+          <RouterLink :to="`/payments/${props.integration_key}`">
+            <Setting v-if="enabled" class="text-gray-400 size-5 cursor-pointer"/>
+          </RouterLink>
         </div>
       </div>
 
