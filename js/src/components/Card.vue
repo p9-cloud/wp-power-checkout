@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {ref} from 'vue'
 import {Setting} from "@element-plus/icons-vue";
-import {useMutation} from '@tanstack/vue-query'
+import {useMutation, useQueryClient} from '@tanstack/vue-query'
 import {IGateway} from '@/types';
 import apiClient from '@/api'
 
@@ -13,10 +13,15 @@ const props = withDefaults(defineProps<IGateway>(), {
 
 const enabled = ref<boolean>(props.enabled)
 
+const queryClient = useQueryClient()
+
 const {mutateAsync: toggleIntegration, isPending} = useMutation({
   mutationFn: async () => {
     return apiClient.post('toggle-integration', {integration_key: props.integration_key})
-  }
+  },
+  onSuccess() {
+    queryClient.invalidateQueries({queryKey: ['integrations']})
+  },
 })
 
 // 當 switch 改變時觸發 mutation

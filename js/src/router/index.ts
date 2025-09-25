@@ -1,11 +1,10 @@
 // router/index.js
 import {createRouter, createWebHashHistory} from 'vue-router'
-import App from '@/App.vue'
 import {Settings, Payments, Logistics, Invoices, Integration} from '@/pages'
 
 
 const routes = [
-    {path: '/', component: App},
+    {path: '/', redirect: '/payments'},// 預設導向 /payments
     {path: '/payments', component: Payments},
     {path: '/payments/:id', component: Integration},
     {path: '/logistics', component: Logistics},

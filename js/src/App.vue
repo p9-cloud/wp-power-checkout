@@ -9,7 +9,7 @@
     <div class="w-28">
       <el-menu
           background-color="transparent"
-          default-active="$route.path"
+          default-active="/payments"
           router
       >
         <el-menu-item index="/payments">

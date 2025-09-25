@@ -65,7 +65,7 @@ const onSubmit = () => {
   formRef.value.validate((valid: boolean) => {
     console.log('valid', valid)
     if (valid) {
-      mutate(toRaw(form.value)) // 呼叫 mutation
+      save(toRaw(form.value)) // 呼叫 mutation
     }
   })
 }
@@ -73,8 +73,8 @@ const onSubmit = () => {
 const queryClient = useQueryClient()
 
 // 定義 mutation
-const {mutate} = useMutation({
-  mutationFn: async (payload: typeof form) => {
+const {mutate: save, isPending: isSavePending} = useMutation({
+  mutationFn: async (payload: IFormData) => {
     // 發送更新 API
     return await apiClient.post(`/settings/${settingKey}`, payload)
   },
@@ -182,7 +182,7 @@ const {mutate} = useMutation({
     </el-form-item>
 
     <el-form-item>
-      <el-button type="primary" @click="onSubmit">儲存</el-button>
+      <el-button v-loading="isSavePending" type="primary" @click="onSubmit">儲存</el-button>
       <el-button>Cancel</el-button>
     </el-form-item>
   </el-form>
