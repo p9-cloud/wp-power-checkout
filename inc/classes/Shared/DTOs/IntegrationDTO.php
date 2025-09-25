@@ -18,6 +18,12 @@ final class IntegrationDTO extends DTO {
 	/** @var string* Integration KEY 唯一識別 */
 	public string $integration_key;
 
+	/** @var string integration_class_name */
+	public string $integration_class_name;
+
+	/** @var string* Setting KEY 儲存在 option_name 的 key */
+	public string $setting_key;
+
 	/** @var string* Integration 名稱 */
 	public string $name;
 
@@ -48,14 +54,11 @@ final class IntegrationDTO extends DTO {
 		IntegrationUtils::invalidate($this);
 	}
 
-	/**
-	 * @param class-string<BaseRegisterIntegration> $class_name 類別名稱
-	 * @param string                                $domain_type 網域類型
-	 * @return void 註冊 Integration
-	 */
-	public function register( string $class_name, string $domain_type ): void { // phpcs:ignore
-		IntegrationUtils::register($class_name, $domain_type);
+	/** @return BaseRegisterIntegration */
+	public function get_registered_integration(): BaseRegisterIntegration {
+		return new $this->integration_class_name();
 	}
+
 
 	/**
 	 *  驗證 Integration Key
@@ -70,5 +73,13 @@ final class IntegrationDTO extends DTO {
 		}
 
 		DomainType::from( $this->domain_type);
+	}
+
+
+	/** @return array 輸出給前端 */
+	public function to_array(): array {
+		$array = parent::to_array();
+		unset($array['integration_class_name']);
+		return $array;
 	}
 }

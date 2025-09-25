@@ -18,5 +18,9 @@
         &:focus {
             outline: none;
         }
+
+        &:disabled {
+            background: none;
+        }
     }
 }

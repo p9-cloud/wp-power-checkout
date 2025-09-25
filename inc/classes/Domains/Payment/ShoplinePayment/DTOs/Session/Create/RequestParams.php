@@ -73,7 +73,7 @@ final class RequestParams extends DTO {
 	 *  @param \WC_Order              $order 訂單
 	 */
 	public static function create( AbstractPaymentGateway $gateway, \WC_Order $order, ): self {
-		$settings = SettingsDTO::instance();
+		$settings = new SettingsDTO();
 		$total    = $order->get_total();
 		$args     = [
 			'referenceId'            => $order->get_id(),

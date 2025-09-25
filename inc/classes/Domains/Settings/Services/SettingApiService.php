@@ -6,6 +6,7 @@ namespace J7\PowerCheckout\Domains\Settings\Services;
 
 use J7\PowerCheckout\Utils\IntegrationUtils;
 use J7\WpUtils\Classes\ApiBase;
+use J7\WpUtils\Classes\WP;
 use J7\WpUtils\Traits\SingletonTrait;
 
 /**
@@ -29,12 +30,79 @@ final class SettingApiService extends ApiBase {
 			'endpoint' => 'toggle-integration',
 			'method'   => 'post',
 		],
+		[
+			'endpoint' => 'settings/(?P<setting_key>[a-zA-Z_-]+)',
+			'method'   => 'get',
+			'callback' => [ __CLASS__, 'get_settings_with_integration_key_callback' ],
+		],
+		[
+			'endpoint' => 'settings/(?P<setting_key>[a-zA-Z_-]+)',
+			'method'   => 'post',
+			'callback' => [ __CLASS__, 'post_settings_with_integration_key_callback' ],
+		],
 	];
 
 	/** Register hooks @return void */
 	public static function register_hooks(): void {
 		self::instance();
 	}
+
+	// region settings 相關
+
+	/**
+	 * 取得設定
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public static function get_settings_with_integration_key_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$setting_key            = (string) $request['setting_key'];
+		$integration            = IntegrationUtils::find_integration( $setting_key);
+		$registered_integration = $integration->get_registered_integration();
+
+		return new \WP_REST_Response(
+			[
+				'code'    => 'success',
+				'message' => "取得 {$setting_key} 設定成功",
+				'data'    => $registered_integration::get_settings(),
+			],
+			200
+			);
+	}
+
+	/**
+	 * 更新設定
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public static function post_settings_with_integration_key_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$setting_key = (string) $request['setting_key'];
+		$integration = IntegrationUtils::find_integration( $setting_key);
+
+		$params = $request->get_params();
+		$params = WP::sanitize_text_field_deep($params, false );
+
+		$registered_integration = $integration->get_registered_integration();
+
+		$registered_integration::save_settings( $params );
+		return new \WP_REST_Response(
+			[
+				'code'    => 'success',
+				'message' => '儲存成功',
+				'data'    => $registered_integration::get_settings(),
+			],
+			200
+		);
+	}
+
+	// endregion
+
+
+
+	// region Integrations 相關
 
 	/**
 	 * 取得 integrations 設定
@@ -79,6 +147,8 @@ final class SettingApiService extends ApiBase {
 				'data'    => $updated_integration?->to_array(),
 			],
 			200
-			);
+		);
 	}
+
+	// endregion
 }

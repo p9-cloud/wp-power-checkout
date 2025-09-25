@@ -61,7 +61,7 @@ const handleChange: () => Promise<boolean> = async () => {
           <span>{{ enabled ? 'Enabled' : 'Disabled' }}</span>
         </div>
         <div>
-          <RouterLink :to="`/payments/${props.integration_key}`">
+          <RouterLink :to="`/payments/${props.setting_key}`">
             <Setting v-if="enabled" class="text-gray-400 size-5 cursor-pointer"/>
           </RouterLink>
         </div>

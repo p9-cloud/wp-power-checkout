@@ -1,20 +1,41 @@
 <script lang="ts" setup>
 import {Back, InfoFilled} from "@element-plus/icons-vue";
-import {computed, reactive, toRaw} from 'vue'
+import {computed, ref, toRaw, watch} from 'vue'
+import {useRoute} from 'vue-router'
+import {useQuery} from "@tanstack/vue-query";
+import apiClient from "@/api";
 
-const form = reactive<{
-  platformId: string,
-  merchantId: string,
-  apiKey: string,
-  clientKey: string,
+interface IFormData {
   mode: string,
+  platformId?: string,
+  merchantId?: string,
+  apiKey?: string,
+  clientKey?: string,
+  signKey?: string,
   allowPaymentMethodList: string[],
-}>({
-  platformId: '',
-  merchantId: '',
-  apiKey: '',
-  clientKey: '',
-  mode: 'prod',
+}
+
+
+const route = useRoute()
+const settingKey = route.params.id
+
+const {isPending, data} = useQuery({
+  queryKey: ['integration_settings', settingKey,],
+  queryFn: async () => await apiClient.get<{
+    code: string,
+    message: string,
+    data: IFormData
+  }>(`settings/${settingKey}`),
+  select: (res) => res.data?.data,
+})
+
+
+// 表單 ref
+const formRef = ref<IFormData>()
+
+// 表單資料
+const form = ref<IFormData>({
+  mode: 'test',
   allowPaymentMethodList: [
     'CreditCard',
     'VirtualAccount',
@@ -22,13 +43,25 @@ const form = reactive<{
     'ApplePay',
     'LinePay',
     'ChaileaseBNPL',
-  ],
+  ]
 })
 
-const isTestMode = computed(() => form.mode === 'test')
+watch(
+    data,
+    (newData) => {
+      if (newData) {
+        form.value = {
+          ...newData
+        } // 將 API 回傳資料填入表單
+      }
+    },
+    {immediate: true}
+)
+
+const isTestMode = computed(() => form.value.mode === 'test')
 
 const onSubmit = () => {
-  console.log('submit!', toRaw(form))
+  console.log('submit!', toRaw(form.value))
 }
 
 
@@ -42,7 +75,29 @@ const onSubmit = () => {
     回《金流》
   </div>
 
-  <el-form :model="form" label-position="right" label-width="auto" style="max-width: 40rem">
+  <el-form
+      v-loading="isPending"
+      element-loading-background="rgba(255, 255, 255, 0)"
+      :model="form" ref="formRef" label-position="right" label-width="auto"
+      :class="{
+      'opacity-25': isPending,
+      }"
+      style="max-width: 40rem">
+    <el-form-item>
+      <template #label>
+        <span class="flex gap-x-2 items-center">
+          <span>啟用測試模式</span>
+          <el-tooltip content="啟用後，將使用測試的串接碼測試付款" placement="top">
+            <el-icon><InfoFilled/></el-icon>
+          </el-tooltip>
+        </span>
+      </template>
+      <el-switch
+          v-model="form.mode"
+          active-value="test"
+          inactive-value="prod"/>
+    </el-form-item>
+
     <el-form-item>
       <template #label>
         <span class="flex gap-x-2 items-center">
@@ -75,21 +130,11 @@ const onSubmit = () => {
       <el-input v-model="form.clientKey" :disabled="isTestMode"/>
     </el-form-item>
 
-
-    <el-form-item>
-      <template #label>
-        <span class="flex gap-x-2 items-center">
-          <span>啟用測試模式</span>
-          <el-tooltip content="啟用後，將使用測試的串接碼測試付款" placement="top">
-            <el-icon><InfoFilled/></el-icon>
-          </el-tooltip>
-        </span>
-      </template>
-      <el-switch
-          v-model="form.mode"
-          active-value="test"
-          inactive-value="prod"/>
+    <el-form-item :required="!isTestMode" label="Sign Key">
+      <el-input v-model="form.signKey" :disabled="isTestMode"/>
+      <p class="text-sm text-gray-500">Sign Key 簽名密鑰，需要設定完 WebHook 後，由 Shopline 窗口提供</p>
     </el-form-item>
+
 
     <el-form-item label="允許的付款方式">
       <el-checkbox-group v-model="form.allowPaymentMethodList">

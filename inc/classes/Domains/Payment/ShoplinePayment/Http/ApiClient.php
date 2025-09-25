@@ -33,7 +33,7 @@ final class ApiClient {
 		/** @var \WC_Order 訂單 */
 		public \WC_Order $order
 	) {
-		$this->settings  = SettingsDTO::instance();
+		$this->settings  = new SettingsDTO();
 		$this->requester = new Requester( $this->gateway, $this->order );
 	}
 

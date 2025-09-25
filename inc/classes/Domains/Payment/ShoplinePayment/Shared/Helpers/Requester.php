@@ -32,7 +32,7 @@ final class Requester {
 		public AbstractPaymentGateway $gateway,
 		public \WC_Order $order
 	) {
-		$this->settings = SettingsDTO::instance();
+		$this->settings = new SettingsDTO();
 	}
 
 	/**

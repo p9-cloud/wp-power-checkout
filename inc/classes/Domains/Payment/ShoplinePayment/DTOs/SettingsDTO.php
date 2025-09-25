@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs;
 
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RegisterIntegration;
 use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
@@ -14,9 +14,8 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  */
 final class SettingsDTO extends DTO {
 
-
 	/** @var string $mode Enums\Mode::value 模式  */
-	public string $mode;
+	public string $mode = Enums\Mode::TEST->value;
 	/** @var string SLP 平台 ID，平台特店必填，平台特店底下會有子特店 */
 	public string $platformId;
 	/** @var string *直連特店串接：SLP 分配的特店 ID；平台特店串接：SLP 分配的子特店 ID */
@@ -40,31 +39,53 @@ final class SettingsDTO extends DTO {
 		'ChaileaseBNPL',
 	];
 
-	/** 創建實例
+	/**
+	 * 實例化後，如果是 測試模式就修改屬性
 	 *
-	 * @return self
-	 * @throws \Exception 如果驗證失敗
+	 * @return void
 	 */
-	public static function instance(): self {
-		$settings = SettingTabService::get_settings();
-		$args     = $settings[ RedirectGateway::class ] ?? [];
+	protected function after_init(): void {
+		$integration_settings = SettingTabService::get_settings(RegisterIntegration::$setting_key);
 
-		$mode = $args['mode'] ?? Enums\Mode::TEST->value;
+		$mode = $integration_settings['mode'] ?? Enums\Mode::TEST->value;
 		if (Enums\Mode::TEST->value === $mode) {
-			$args['mode']       = Enums\Mode::TEST->value;
-			$args['merchantId'] = '3252264968486264832';
-			$args['apiKey']     = 'sk_sandbox_fc8d1884a9064b6ba4b2cc16d124663c';
-			$args['clinetKey']  = 'pk_sandbox_f03ae82192c946888fbf0901b8d2053a';
-			$args['apiUrl']     = 'https://api-sandbox.shoplinepayments.com';
+			$this->mode       = Enums\Mode::TEST->value;
+			$this->merchantId = '3252264968486264832';
+			$this->apiKey     = 'sk_sandbox_fc8d1884a9064b6ba4b2cc16d124663c';
+			$this->clientKey  = 'pk_sandbox_f03ae82192c946888fbf0901b8d2053a';
+			$this->apiUrl     = 'https://api-sandbox.shoplinepayments.com';
 			// TODO 這 signKey 是 partnerdemo 的 signKey，需要改成實際的 signKey
-			$args['signKey'] = 'fea6681d4e8f4889ac06f944450e43b7';
+			$this->signKey = 'fea6681d4e8f4889ac06f944450e43b7';
 		}
 
-		if ( isset( $args['signKey'] ) ) {
-			$args['signKey'] = \mb_convert_encoding($args['signKey'], 'UTF-8', 'auto');
+		if ( !empty( $this->signKey ) ) {
+			$this->signKey = \mb_convert_encoding($this->signKey, 'UTF-8', 'auto');
+		}
+	}
+
+	/**
+	 * @param bool $raw true: 拿原始資料
+	 *
+	 * @return array
+	 */
+	public function to_array( bool $raw = false ): array {
+		$array = parent::to_array();
+		if ($raw) {
+			$default_array = [
+				'mode'                   => Enums\Mode::TEST->value,
+				'allowPaymentMethodList' => [
+					'CreditCard',
+					'VirtualAccount',
+					'JKOPay',
+					'ApplePay',
+					'LinePay',
+					'ChaileaseBNPL',
+				],
+			];
+			return \wp_parse_args( $this->dto_data, $default_array);
 		}
 
-		return new self( $args);
+		return parent::to_array();
 	}
 
 

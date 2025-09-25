@@ -18,10 +18,19 @@ class SettingTabService {
 	/** @var array{0:string, 1:string} 設定分頁 [value, label] */
 	private static array $tab;
 
-	/** @return array 取得設定 */
-	public static function get_settings(): array {
+	/**
+	 * 取得存在 DB 中的 資料
+	 *
+	 * @param string $integration_key integration key
+	 * @return array 取得設定
+	 */
+	public static function get_settings( string $integration_key = '' ): array {
 		$settings = \get_option( self::OPTION_NAME, [] );
-		return \is_array( $settings ) ? $settings : [];
+		$settings = \is_array( $settings ) ? $settings : [];
+		if (!$integration_key) {
+			return $settings;
+		}
+		return $settings[ $integration_key ] ?? [];
 	}
 
 	/** @param array $value 儲存設定 */

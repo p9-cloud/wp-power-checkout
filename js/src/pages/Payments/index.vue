@@ -7,7 +7,7 @@ import {IGateway} from '@/types'
 
 
 const {isPending, data,} = useQuery({
-  queryKey: ['todos'],
+  queryKey: ['integrations'],
   queryFn: async () => await apiClient.get('integrations'),
 })
 

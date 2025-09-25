@@ -7,6 +7,7 @@ namespace J7\PowerCheckout\Utils;
 use J7\PowerCheckout\Shared\DTOs\IntegrationDTO;
 use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\PowerCheckout\Shared\Abstracts\BaseRegisterIntegration;
+use J7\WpUtils\Classes\General;
 
 /**
  * Integration 工具類
@@ -66,15 +67,38 @@ abstract class IntegrationUtils {
 			\wp_parse_args(
 				self::get_settings($key),
 				[
-					'integration_key' => $key,
-					'name'            => $class_name::$name,
-					'description'     => $class_name::$description,
-					'icon_url'        => $class_name::$icon_url,
-					'domain_type'     => $domain_type,
+					'integration_key'        => $key,
+					'integration_class_name' => $class_name,
+					'setting_key'            => $class_name::$setting_key,
+					'name'                   => $class_name::$name,
+					'description'            => $class_name::$description,
+					'icon_url'               => $class_name::$icon_url,
+					'domain_type'            => $domain_type,
 				]
 				)
 		);
-
+		if (isset(self::$integrations[ $key ])) {
+			throw new \Exception("Integration {$key} already exists");
+		}
 		self::$integrations[ $key ] = $integration;
+	}
+
+
+	/**
+	 * @param string $value 要查找比對的值
+	 * @parma string $key_name 要查找的IntegrationDTO 的屬性名稱
+	 *
+	 * @return IntegrationDTO
+	 * @throws \Exception 如果找不到 Integration
+	 */
+	public static function find_integration( string $value, string $key_name = 'setting_key' ): IntegrationDTO {
+		$integrations = self::get_integrations();
+		/** @var IntegrationDTO|null $integration */
+		$integration = General::array_find( $integrations, static fn( $i ) => $i->$key_name === $value );
+
+		if (null ===$integration) {
+			throw new \Exception("Can't find Integration with {$value} {$key_name}");
+		}
+		return $integration;
 	}
 }

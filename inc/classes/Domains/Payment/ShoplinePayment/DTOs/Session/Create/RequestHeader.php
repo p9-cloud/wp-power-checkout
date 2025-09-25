@@ -50,7 +50,7 @@ final class RequestHeader extends DTO {
 	 * @return self 取得實例
 	 */
 	public static function create( \WC_Order $order ): self {
-		$settings     = SettingsDTO::instance();
+		$settings     = new SettingsDTO();
 		$milliseconds = intval(( new \DateTimeImmutable() )->format('Uv')); // 13位
 		$request_id   = $order->get_id() . '-' . \wp_unique_id() . '-' . $milliseconds;
 		$args         = [
