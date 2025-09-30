@@ -6,6 +6,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
 
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\EventTypeManager;
 use J7\WpUtils\Classes\DTO;
 
 /**
@@ -67,56 +68,8 @@ enum EventType: string {
 		};
 	}
 
-	/**
-	 * 依照事件類型不同的轉換不同的訂單狀態
-	 * 付款失敗  => 等待付款中
-	 * 逾時未付  => 取消
-	 *
-	 * @param \WC_Order $order 訂單
-	 *
-	 * @return void
-	 */
-	public function update_order_status( \WC_Order $order ): void {
-		$order_status = match ( $this ) {
-			self::SESSION_CREATED,
-			self::SESSION_PENDING => OrderStatus::PENDING,
-			self::SESSION_EXPIRED => OrderStatus::CANCELLED,
-			self::SESSION_SUCCEEDED => OrderStatus::PROCESSING,
-			default => null,
-		};
-		if ( !$order_status ) {
-			return;
-		}
-		$order->add_order_note($this->label());
-		$order->update_status(OrderStatus::CANCELLED->value);
-	}
-
-	/**
-	 * 依照依照事件類型的 DTO
-	 *
-	 * @param array<string, mixed> $data 原始資料
-	 * @return DTO 事件類型的 DTO
-	 */
-	public function dto( array $data ): DTO {
-		return match ( $this ) {
-			self::SESSION_CREATED,
-			self::SESSION_EXPIRED,
-			self::SESSION_PENDING,
-			self::SESSION_SUCCEEDED => Webhooks\Session::create($data),
-			self::TRADE_SUCCEEDED,
-			self::TRADE_FAILED,
-			self::TRADE_EXPIRED,
-			self::TRADE_PROCESSING,
-			self::TRADE_CANCELLED,
-			self::TRADE_CUSTOMER_ACTION => Webhooks\Payment::create($data),
-			self::TRADE_REFUND_SUCCEEDED,
-			self::TRADE_REFUND_FAILED => Webhooks\Refund::create($data),
-			self::CUSTOMER_CREATED,
-			self::CUSTOMER_UPDATED,
-			self::CUSTOMER_DELETED => Webhooks\Member::parse($data),
-			self::CUSTOMER_INSTRUMENT_BINDED,
-			self::CUSTOMER_INSTRUMENT_UPDATED,
-			self::CUSTOMER_INSTRUMENT_UNBINDED => Webhooks\Instrument::create($data),
-		};
+	/** @return EventTypeManager 取得 Manager*/
+	public function get_manager(): EventTypeManager {
+		return new EventTypeManager($this);
 	}
 }

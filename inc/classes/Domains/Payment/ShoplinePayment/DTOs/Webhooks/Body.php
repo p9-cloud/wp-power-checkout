@@ -45,7 +45,7 @@ final class Body extends DTO {
 	 */
 	public static function create( array $args ): self {
 		$type         = EventType::from($args['type']);
-		$data         = $type->dto($args['data']);
+		$data         = $type->get_manager()->get_dto($args['data']);
 		$args['data'] = $data;
 		return new self($args);
 	}

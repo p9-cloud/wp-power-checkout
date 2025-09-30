@@ -73,6 +73,7 @@ final class WebHook extends ApiBase {
 				EventType::SESSION_CREATED, EventType::SESSION_EXPIRED, EventType::SESSION_PENDING, EventType::SESSION_SUCCEEDED => $this->handle_session(
 					$webhook_dto
 				),
+				default => null,
 
 			};
 
@@ -180,6 +181,6 @@ final class WebHook extends ApiBase {
 			throw new \Exception( "Order not found: {$order_id}" );
 		}
 		$event_type = EventType::from( $webhook_dto->type );
-		$event_type->update_order_status( $order );
+		$event_type->get_manager()->update_order_status( $order );
 	}
 }
