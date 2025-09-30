@@ -28,12 +28,16 @@ abstract class WC_UnitTestCase extends \WP_UnitTestCase {
     /** @var \ReflectionAttribute[] 建立測試時需要的屬性 */
     protected array $create_attributes;
     /** @var Api API 模式 */
-    protected Api $api = Api::MOCK;
+    protected static Api $api;
     /** @var array<string, IResource> 測試需要的資源 Helper 實例類別 */
     protected array $containers = [];
     
     /** 此類所有測試方法執行前執行一次 */
-    public static function set_up_before_class(): void {}
+    public static function set_up_before_class(): void {
+        parent::set_up_before_class();
+        $api_mode = \str_replace(' ', '', \getenv( 'API_MODE' ) ?: "");
+        self::$api = Api::tryFrom( $api_mode) ?? Api::MOCK;
+    }
     
     /** 此類所有測試方法執行後執行一次 */
     public static function tear_down_after_class(): void {}

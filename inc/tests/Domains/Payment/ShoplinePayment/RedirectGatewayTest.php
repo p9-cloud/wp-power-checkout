@@ -9,13 +9,16 @@ namespace J7\PowerCheckoutTests\Domains\Payment\ShoplinePayment;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RegisterIntegration;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
+use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\PowerCheckoutTests\Attributes\Create;
 use J7\PowerCheckoutTests\Helper\Order;
 use J7\PowerCheckoutTests\Helper\Requester;
 use J7\PowerCheckoutTests\Shared\Api;
 use J7\PowerCheckoutTests\Shared\Plugin;
 use J7\PowerCheckoutTests\Shared\WC_UnitTestCase;
+use J7\PowerCheckoutTests\Utils\STDOUT;
 use J7\Powerhouse\Domains\Order\Shared\Enums\Status as OrderStatus;
 
 /**
@@ -39,12 +42,24 @@ class RedirectGatewayTest extends WC_UnitTestCase {
     
     /** 每個測試方法執行前執行一次 */
     public function set_up(): void {
+        // 先儲存數據
+        $settings                           = SettingTabService::get_settings();
+        $settings[ RegisterIntegration::$integration_key ] = [
+            'enabled' => true,
+        ];
+        SettingTabService::save_settings($settings);
+        
+        
+        // 呼叫 hook 註冊 API
         parent::set_up();
         $this->gateway = new RedirectGateway();
         $order = $this->get_order();
+        
         // 設定訂單付款方式
         $order->set_payment_method( $this->gateway->id );
         $order->save();
+        
+       
     }
     
     /**
@@ -64,20 +79,20 @@ class RedirectGatewayTest extends WC_UnitTestCase {
     public function test_payment_success(): void {
         $result = null;
         // 模擬 API 環境 - 不發請求
-        if( Api::MOCK === $this->api ) {                // 這邊實例化 $service 看會不會報錯
+        if( Api::MOCK === self::$api ) {                // 這邊實例化 $service 看會不會報錯
             $service = new ApiClient( $this->gateway, $this->get_order() );
             $redirect = "https://pay-sandbox.shoplinepayments.com/checkout/session?sessionToken=BGPGC6M6A4A27OILWBY54WP4J5UDTY3BPE5SSMHPTTORKOPFRM2OWNYQ6C6KM4TFUYFQGWF3EMCDMRP7QHAZ2R3HADADXGYEQUEWJWDCZ32SLPR5EBKBMYGOCOOGZW4FIDKNHXQWAIS7US66XEBCBGZ5FM======--v1";
             $result = ProcessResult::SUCCESS->to_array( $redirect );
         }
         
         // 對金流測試環境發請求
-        if( Api::SANDBOX === $this->api ) {
+        if( Api::SANDBOX === self::$api ) {
             // 測試建立 session 並取得 sessionUrl
             $result = $this->gateway->process_payment( $this->get_order()->get_id() );
         }
         
         // 對金流正式環境發請求
-        if( Api::LIVE === $this->api ) {
+        if( Api::PROD === self::$api ) {
             throw new \Exception( '請求正式環境的測試尚未實作' );
             // TODO: 這邊要發請求到正式環境
         }
@@ -119,6 +134,8 @@ class RedirectGatewayTest extends WC_UnitTestCase {
     public function test_order_status_process_after_payment_success(): void {
         $requester = new Requester( 'POST', '/power-checkout/slp/webhook' );
         $res = $requester->set_body( __DIR__ . '/json/webhook.trade.succeeded.json' )->get_response();
+        
+ 
         $order = $this->get_order();
         $order_status = $order->get_status();
         $this->assertContains( $order_status, [ OrderStatus::PROCESSING->value, OrderStatus::COMPLETED->value ],

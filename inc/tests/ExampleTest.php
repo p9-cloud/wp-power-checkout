@@ -16,7 +16,7 @@ use J7\PowerCheckoutTests\Shared\WC_UnitTestCase;
 class ExampleTest extends WC_UnitTestCase {
     
     /** @var Plugin[] 測試前需要安裝的插件 */
-    protected static array $required_plugins = [
+    protected array $required_plugins = [
         Plugin::WOOCOMMERCE,
         Plugin::POWERHOUSE,
         Plugin::POWER_CHECKOUT,

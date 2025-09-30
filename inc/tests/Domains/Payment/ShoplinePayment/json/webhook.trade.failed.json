@@ -1,0 +1,52 @@
+{
+  "data": {
+    "actionType": "SDK",
+    "order": {
+      "amount": {
+        "currency": "TWD",
+        "value": 2000
+      },
+      "createTime": 1759202198,
+      "customer": {
+        "referenceCustomerId": "2"
+      },
+      "merchantId": "3252264968486264832",
+      "referenceOrderId": "RL0325093001571953131994697905"
+    },
+    "passthrough": "{\"merchantId\":\"3252264968486264832\",\"linkOrderId\":\"se_14012509307195310627806783419\",\"linkPaymentId\":\"RL0325093001571953131994697905\",\"acquirerType\":\"Session\"}",
+    "payment": {
+      "autoCapture": true,
+      "autoConfirm": false,
+      "channelDealId": "250930117195313217554622001080",
+      "creditCard": {
+        "bin": "41476337",
+        "brand": "Visa",
+        "category": "SIGNATURE",
+        "issuer": "TAISHIN INTERNATIONAL BANK",
+        "issuerCountry": "TW",
+        "last4": "8405",
+        "type": "CREDIT"
+      },
+      "paidAmount": {
+        "currency": "TWD",
+        "value": 0
+      },
+      "paymentBehavior": "Regular",
+      "paymentInstrument": {
+        "savePaymentInstrument": false
+      },
+      "paymentMethod": "CreditCard"
+    },
+    "paymentMsg": {
+      "code": "4463",
+      "msg": "The payment was declined after being flagged by the issuing bank."
+    },
+    "referenceOrderId": "RL0325093001571953131994697905",
+    "status": "FAILED",
+    "subStatus": "FAILED",
+    "tradeOrderId": "10012509307195313201364608956"
+  },
+  "id": "00012509307195313231966290222202509",
+  "type": "trade.failed",
+  "created": 1759202198286
+}

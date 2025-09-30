@@ -19,7 +19,7 @@ interface IResource {
      *
      * @param string|int $index_or_type 資源索引或類型
      */
-    public function get_item( string|int $index_or_type = 'random' ): ?object;
+    public function get_item( string|int $index_or_type = 'random' );
     
     /**
      * 取得資源的陣列

@@ -30,7 +30,7 @@ class Requester {
         $json_array = \json_decode( \file_get_contents( $file_path ), true, 512, JSON_THROW_ON_ERROR );
         
         // 轉回 JSON 字串（確保是乾淨的 JSON）
-        $json = wp_json_encode( $json_array );
+        $json = \wp_json_encode( $json_array );
         $this->request->set_body( $json );
         return $this;
     }
