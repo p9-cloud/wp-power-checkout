@@ -16,6 +16,10 @@ abstract class PaymentGateway extends AbstractPaymentGateway {
 	 * @return string
 	 */
 	public function get_icon() {
-		return RegisterIntegration::$icon_url;
+		return \sprintf(
+			'<img src="%1$s" alt="%2$s">',
+						RegisterIntegration::$icon_url,
+						RegisterIntegration::$name
+		);
 	}
 }
