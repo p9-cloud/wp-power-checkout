@@ -22,6 +22,8 @@ enum ResponseSubStatus: string {
 	/** @var string 請款失敗 */
 	case CAPTURE_FAILED = 'CAPTURE_FAILED';
 
+	case FAILED = 'FAILED';
+
 	/**
 	 * 取得狀態的標籤
 	 *
