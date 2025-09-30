@@ -1,6 +1,6 @@
 {
   "name": "j7-dev/power-checkout",
-  "description": "串接金流、物流、電子發票，全面優化WooCommerce購物車、結帳頁、我的帳號等頁面，讓結帳轉換率一飛沖天",
+  "description": "串接金流、物流、電子發票，全面優化 WooCommerce 購物車、結帳頁、我的帳號等頁面，讓結帳轉換率一飛沖天",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-only",
   "authors": [
@@ -18,7 +18,6 @@
     }
   },
   "require": {
-    "kucrut/vite-for-wp": "^0.11.6",
     "j7-dev/wp-utils": "^0.3",
     "giggsey/libphonenumber-for-php-lite": "^9.0"
   },
@@ -32,7 +31,6 @@
     "php-stubs/woocommerce-stubs": "@stable",
     "php-stubs/wordpress-stubs": "@stable",
     "phpstan/extension-installer": "@stable",
-    "roots/wordpress": "^6.0",
     "phpunit/phpunit": "^9.0",
     "yoast/phpunit-polyfills": "^4.0",
     "wp-phpunit/wp-phpunit": "^6.0"
@@ -51,8 +49,11 @@
   },
   "scripts": {
     "lint": "phpcs",
-    "test": "vendor\\bin\\phpunit --colors=always --testdox",
-    "test:debug": "set DEBUG=true && vendor\\bin\\phpunit --colors=always --testdox",
+    "test": "set API_MODE=mock && vendor\\bin\\phpunit --colors=always --testdox --verbose",
+    "test:mock": "set API_MODE=mock && vendor\\bin\\phpunit --colors=always --testdox --verbose",
+    "test:sandbox": "set API_MODE=sandbox && vendor\\bin\\phpunit --colors=always --testdox --verbose",
+    "test:prod": "set API_MODE=prod && vendor\\bin\\phpunit --colors=always --testdox --verbose",
+    "test:debug": "set DEBUG=true && vendor\\bin\\phpunit --colors=always --testdox --verbose",
     "test:coverage": "vendor\\bin\\phpunit --coverage",
     "test:warning": "vendor\\bin\\phpunit --display-warnings"
   }

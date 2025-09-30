@@ -80,13 +80,13 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 		$this->error             = new \WP_Error();
 		$this->title             = $this->payment_label;
 		$this->method_title      = $this->payment_label;
-		$this->order_button_text = sprintf( __( 'Pay via %s', 'woocommerce' ), $this->payment_label );
+		$this->order_button_text = \sprintf( \__( '使用 %s 付款', 'power_checkout' ), $this->payment_label );
 
 		$default_form_fields = [
 			'enabled'     => [
-				'title'   => __( 'Enable/Disable', 'woocommerce' ),
+				'title'   => \__( 'Enable/Disable', 'woocommerce' ),
 				/* translators: %s: Gateway method title */
-				'label'   => sprintf( __( 'Enable %s', 'power_checkout' ), $this->method_title ),
+				'label'   => \sprintf( \__( 'Enable %s', 'power_checkout' ), $this->method_title ),
 				'type'    => 'checkbox',
 				'default' => 'no',
 			],
