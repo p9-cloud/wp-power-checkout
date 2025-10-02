@@ -53,6 +53,7 @@ final class Bootstrap {
 			.order_notes .array_to_html{
 				word-break: break-all;
 				white-space: normal;
+				display: grid;
 			}
 		</style>
 		<?php
