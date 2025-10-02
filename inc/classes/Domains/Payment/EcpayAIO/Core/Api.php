@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\EcpayAIO\Core;
 
-use J7\WpUtils\Classes\ApiBase;
-use J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils\Base as EcpayUtils;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\DTOs\ResponseParams;
-use J7\Powerhouse\Utils\Base as PowerhouseUtils;
+use J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils\Base as EcpayUtils;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\Powerhouse\Utils\Base as PowerhouseUtils;
+use J7\WpUtils\Classes\ApiBase;
 
 /** Api */
 final class Api extends ApiBase {
@@ -83,7 +83,7 @@ final class Api extends ApiBase {
 			throw new \Exception( "訂單 {$order_id} 不是 WC_Order 實例" );
 		}
 
-		/** @var \J7\PowerCheckout\Domains\Payment\Shared\AbstractPaymentGateway $gateway */
+		/** @var \J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway $gateway */
 		$gateway = \wc_get_payment_gateway_by_order( $order );
 
 		// ----- ▼ 寫入 order_note, order_meta, log ----- //

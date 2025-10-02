@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
 
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
-use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\EventTypeManager;
-use J7\WpUtils\Classes\DTO;
 
 /**
  * Shopline Payment Event Type
@@ -71,5 +68,20 @@ enum EventType: string {
 	/** @return EventTypeManager 取得 Manager*/
 	public function get_manager(): EventTypeManager {
 		return new EventTypeManager($this);
+	}
+
+	/**  @return bool 是否為 Trade Event Type  */
+	public function is_trade_event_type(): bool {
+		return match ( $this ) {
+			self::TRADE_SUCCEEDED,
+			self::TRADE_FAILED,
+			self::TRADE_EXPIRED,
+			self::TRADE_PROCESSING,
+			self::TRADE_CANCELLED,
+			self::TRADE_CUSTOMER_ACTION,
+			self::TRADE_REFUND_SUCCEEDED,
+			self::TRADE_REFUND_FAILED => true,
+			default => false,
+		};
 	}
 }

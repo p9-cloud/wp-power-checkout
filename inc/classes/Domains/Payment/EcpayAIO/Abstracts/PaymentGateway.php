@@ -4,9 +4,9 @@ declare ( strict_types = 1 );
 
 namespace J7\PowerCheckout\Domains\Payment\EcpayAIO\Abstracts;
 
-use J7\PowerCheckout\Plugin;
-use J7\PowerCheckout\Domains\Payment\Shared\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\Services\Service;
+use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
+use J7\PowerCheckout\Plugin;
 
 
 /** EcPay 用付款閘道抽象類別 */

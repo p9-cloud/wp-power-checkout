@@ -4,6 +4,7 @@ declare (strict_types = 1);
 
 namespace J7\PowerCheckout\Domains\Payment\Shared;
 
+use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Plugin;
 
 if (!class_exists('\Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\EcpayAIO\DTOs;
 
-use J7\WpUtils\Classes\DTO;
-use J7\PowerCheckout\Utils\Helper;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\Services\Services;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils\Base as EcpayUtils;
-use J7\PowerCheckout\Domains\Payment\Shared\AbstractPaymentGateway;
+use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\PowerCheckout\Utils\Helper;
+use J7\WpUtils\Classes\DTO;
 
 /**
  * 綠界全方位金流 API 必填參數 DTO

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Payment\EcpayAIO\Services;
 
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\DTOs\RequestParams;
-use J7\PowerCheckout\Domains\Payment\Shared\AbstractPaymentGateway;
-use J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils\Base as EcpayUtils;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\DTOs\Settings;
+use J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils\Base as EcpayUtils;
+use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 
 /**
  * EcpayAIO 跳轉式支付服務類
