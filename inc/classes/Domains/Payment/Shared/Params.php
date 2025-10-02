@@ -16,6 +16,9 @@ class Params {
 	/** @var string 回應參數 meta_key */
 	public const RESPONSE_KEY = 'pc_payment_res_params';
 
+	/** @var string 專門儲存第三方金流那邊的識別碼 例如：SLP 的 sessionId  */
+	public const IDENTITY_KEY = 'pc_identity_key';
+
 	/** Construct */
 	public function __construct(
 		private readonly \WC_Order $order,
@@ -52,14 +55,22 @@ class Params {
 		return $key ? ( $params[ $key ] ?? [] ) : $params;
 	}
 
-	/** @param array<string, mixed> $params 儲存回應參數 @return self */
-	public function save_response( array $params ): self {
+	/**
+	 * 儲存回應
+	 *
+	 * @param array<string, mixed> $params 儲存回應參數 @return self
+	 * @param string               $identity_array_key 儲存識別碼的參數 key，例如 SLP 的 sessionId
+	 */
+	public function save_response( array $params, string $identity_array_key = '' ): self {
 		$this->order->update_meta_data(
 			self::RESPONSE_KEY,
 			[
 				'params' => $params,
 			]
 			);
+		if ($identity_array_key && isset($params[ $identity_array_key ])) {
+			$this->order->update_meta_data( self::IDENTITY_KEY, $params[ $identity_array_key ]);
+		}
 		$this->order->save_meta_data();
 		return $this;
 	}
@@ -67,12 +78,12 @@ class Params {
 	/**
 	 * 取得回應參數
 	 *
-	 * @param string $key 取得回應參數的 key
+	 * @param ?string $key 取得回應參數的 key
 	 * @return array<string, mixed> 回應參數
 	 */
-	public function get_response( string $key = 'params' ): array {
+	public function get_response( ?string $key = null ): array {
 		$params = $this->order->get_meta( self::RESPONSE_KEY );
-		$params = is_array( $params ) ? $params : [];
+		$params = \is_array( $params ) ? $params : [];
 		return $key ? ( $params[ $key ] ?? [] ) : $params;
 	}
 }
