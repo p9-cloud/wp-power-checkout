@@ -18,7 +18,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook;
 final class Payment extends DTO {
 
 	/** @var string *特店訂單號 (32)*/
-	public string $referenceOrderId;
+	public string $referenceOrderId = '';
 
 	/** @var string *SLP 付款交易訂單編號 (32)*/
 	public string $tradeOrderId;

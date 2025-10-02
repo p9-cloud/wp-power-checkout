@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session\Create;
 
-use J7\WpUtils\Classes\DTO;
-use J7\PowerCheckout\Domains\Payment\Shared\AbstractPaymentGateway;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
+use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
+use J7\WpUtils\Classes\DTO;
 
 /**
  * Shopline Payment 跳轉式支付 RequestParams

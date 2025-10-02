@@ -100,9 +100,10 @@ final class CreditInstallment extends Credit {
 	}
 
 	/** 在 process_payment 之前執行 */
-	public function before_process_payment( \WC_Order $order ): void {
+	protected function before_process_payment( \WC_Order $order ): string {
 		if ( isset( $_POST['ecpay_number_of_periods'] ) ) { // phpcs:ignore
 			$this->number_of_period = (int) $_POST['ecpay_number_of_periods']; // phpcs:ignore
 		}
+		return parent( $order );
 	}
 }
