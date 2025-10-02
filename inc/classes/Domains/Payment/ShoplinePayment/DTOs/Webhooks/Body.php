@@ -57,4 +57,26 @@ final class Body extends DTO {
 			EventType::from($this->type);
 		}
 	}
+
+	/** @return \WC_Order|null 取得 Webhook 關聯的訂單，只有 Session|Payment 的 EventType 會拿到 Order */
+	public function get_order(): \WC_Order|null {
+		$data = $this->data;
+		if (!isset($data->referenceId) && !isset($data->referenceOrderId)) {
+			return null;
+		}
+
+		/** @var Session|Payment $data */
+		$order_id = $data->referenceId ?: $data->referenceOrderId;
+
+		$order = \wc_get_order( $order_id );
+		if (!$order instanceof \WC_Order) {
+			return null;
+		}
+		return $order;
+	}
+
+	/** @return EventType Webhook 的 Event Type */
+	public function get_event_type(): EventType {
+		return EventType::from( $this->type );
+	}
 }
