@@ -7,6 +7,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook\Payment;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\ResponseParams;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\StatusManager;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
@@ -109,9 +110,13 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	 * @param \WC_Order $order 訂單
 	 */
 	protected function before_order_received( \WC_Order $order ): void {
-		$response_dto   = ( new ApiClient( $this, $order ) )->get_payment();
-		$status_manager = new StatusManager( $response_dto, $order );
-		$status_manager->update_order_status();
+		try {
+			$response_dto   = ( new ApiClient( $this, $order ) )->get_payment();
+			$status_manager = new StatusManager( $response_dto, $order );
+			$status_manager->update_order_status();
+		} catch (\Exception $e) {
+			$this->logger( "❌ {$this->payment_label} 發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
+		}
 	}
 
 	/** [Admin] 在後台 order detail 頁地址下方顯示資訊 */
@@ -125,11 +130,11 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 			return;
 		}
 		try {
-			$formatted_payment_detail = Payment::create( $payment_detail_array)->to_human_array();
+			$html = ResponseParams::create( $payment_detail_array)->to_human_html();
 		} catch (\Exception $e) {
-			$formatted_payment_detail = $payment_detail_array;
+			$html = WP::array_to_html( $payment_detail_array );
 		}
 
-		echo WP::array_to_html( $formatted_payment_detail );
+		echo $html;
 	}
 }

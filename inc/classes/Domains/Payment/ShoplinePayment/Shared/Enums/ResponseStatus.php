@@ -36,6 +36,7 @@ enum ResponseStatus: string {
 			self::FAILED => '失敗',
 			self::CANCELLED => '已取消',
 			self::EXPIRED => '已過期',
+			default => $this->value,
 		};
 	}
 

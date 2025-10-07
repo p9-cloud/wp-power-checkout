@@ -37,6 +37,8 @@ enum ResponseSubStatus: string {
 			self::RISK_REJECTED => '風控拒絕',
 			self::AUTHORIZATION_FAILED => '授權失敗',
 			self::CAPTURE_FAILED => '請款失敗',
+			self::FAILED => '',
+			default => $this->value,
 		};
 	}
 }

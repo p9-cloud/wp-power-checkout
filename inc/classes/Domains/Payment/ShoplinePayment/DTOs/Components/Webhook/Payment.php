@@ -98,7 +98,7 @@ final class Payment extends DTO {
 	public function to_human_array(): array {
 
 		$base_array = [
-			'付款方式' => $this->paymentMethod,
+			'付款方式' => Enums\PaymentMethod::from($this->paymentMethod)->label(),
 		];
 
 		if ( isset( $this->subPaymentMethod ) ) {

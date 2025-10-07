@@ -11,8 +11,10 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\Response
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Payment;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Session;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ErrorCode;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\EventType;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseSubStatus;
 use J7\WpUtils\Classes\DTO;
@@ -43,33 +45,12 @@ final class StatusManager {
 	 * @return void
 	 */
 	public function update_order_status(): void {
-		$response_dto    = $this->_response_dto;
-		$status_enum     = ResponseStatus::from($response_dto->status);
-		$sub_status_enum = null;
-		if (isset( $response_dto->subStatus)) {
-			$sub_status_enum = ResponseSubStatus::from( $response_dto->subStatus);
-		}
+		$payment_detail_html = $this->_response_dto->to_human_html();
+		$this->_order->add_order_note($payment_detail_html);
+		$this->_order->update_meta_data( Params::PAYMENT_DETAIL_KEY, $this->_response_dto->to_array() );
+		$this->_order->save_meta_data();
 
-		$title = \sprintf(
-			'%1$s 付款狀態：%2$s %3$s <br> 付款方式：%4$s',
-			$status_enum->emoji(),
-			$status_enum->label(),
-			$sub_status_enum?->label() ?? '',
-			$response_dto->payment->paymentMethod
-		);
-
-		if ($this->_payment_detail) {
-			/** @var DTO $payment_detail_dto */
-			$payment_detail_dto   = $this->_payment_detail;
-			$payment_detail_array = $payment_detail_dto?->to_array();
-			$payment_detail_html  = WP::array_to_html($payment_detail_array, [ 'title' => $title ]);
-			$this->_order->add_order_note($payment_detail_html);
-			$this->_order->update_meta_data( Params::PAYMENT_DETAIL_KEY, $this->_response_dto->payment->to_array() );
-			$this->_order->save_meta_data();
-		} else {
-			$this->_order->add_order_note($title);
-		}
-
+		$status_enum  = ResponseStatus::tryFrom($this->_response_dto->status);
 		$order_status = match ( $status_enum ) {
 			ResponseStatus::SUCCEEDED => OrderStatus::PROCESSING,
 			ResponseStatus::EXPIRED => OrderStatus::CANCELLED,
@@ -99,9 +80,6 @@ final class StatusManager {
 			return $response_dto->payment->virtualAccount;
 		}
 
-		if (isset($response_dto->payment->paymentInstrument)) {
-			return $response_dto->payment->paymentInstrument;
-		}
 		if (isset($response_dto->payment->paymentMethodOptions)) {
 			return $response_dto->payment->paymentMethodOptions;
 		}

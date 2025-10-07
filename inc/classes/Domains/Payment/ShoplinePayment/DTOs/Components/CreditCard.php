@@ -52,7 +52,7 @@ final class CreditCard extends DTO {
 		];
 
 		return [
-			'信用卡卡別' => $this->brand . ( CreditCardType::tryFrom($this->type)?->label() ?? $this->type ), // Visa, MasterCard, JCB, etc.
+			'信用卡卡別' => "{$this->brand} " . ( CreditCardType::tryFrom($this->type)?->label() ?? $this->type ), // Visa, MasterCard, JCB, etc.
 			'發卡行'   => $issuer_mapper[ $this->issuer ] ?? $this->issuer, // 銀行
 			'卡號前六碼' => $this->bin,
 			'卡號後四碼' => $this->last4,

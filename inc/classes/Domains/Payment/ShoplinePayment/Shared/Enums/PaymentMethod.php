@@ -29,7 +29,7 @@ enum PaymentMethod: string {
 	 */
 	public function label(): string {
 		return match ( $this ) {
-			self::CREDITCARD => '信用卡、信用卡分期',
+			self::CREDITCARD => '信用卡',
 			self::VIRTUALACCOUNT => 'ATM 銀行轉帳',
 			self::JKOPAY => '街口支付',
 			self::APPLEPAY => 'ApplePay',
