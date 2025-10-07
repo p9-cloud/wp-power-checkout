@@ -19,7 +19,7 @@ final class Payment extends DTO {
 	public string $paymentMethod;
 
 	/** @var string|null 子付款方式 (16) 選填 */
-	public string|null $subPaymentMethod;
+	public string|null $subPaymentMethod = null;
 
 	/** @var bool 自動確認，默認為 false 選填 */
 	public bool $autoConfirm;
@@ -43,16 +43,16 @@ final class Payment extends DTO {
 	public string|null $paymentCustomerId;
 
 	/** @var Components\CreditCard|null 信用卡資訊 (32) 選填 */
-	public Components\CreditCard|null $creditCard;
+	public Components\CreditCard|null $creditCard = null;
 
 	/** @var Components\VirtualAccount|null 虛擬帳號資訊 (32) 選填 */
-	public Components\VirtualAccount|null $virtualAccount;
+	public Components\VirtualAccount|null $virtualAccount = null;
 
 	/** @var Components\PaymentInstrument|null 付款工具資訊 (32) 選填 */
-	public Components\PaymentInstrument|null $paymentInstrument;
+	public Components\PaymentInstrument|null $paymentInstrument = null;
 
-	/** @var Components\PaymentMethodOptions|null 付款方式選項 (32) 選填 */
-	public Components\PaymentMethodOptions|null $paymentMethodOptions;
+	/** @var PaymentMethodOptions|null 付款方式選項 (32) 選填 */
+	public PaymentMethodOptions|null $paymentMethodOptions = null;
 
 	/** @var array 必填屬性 */
 	protected array $require_properties = [ 'paymentMethod', 'paymentBehavior', 'paidAmount' ];
@@ -92,5 +92,25 @@ final class Payment extends DTO {
 		if (isset( $this->paymentBehavior)) {
 			Enums\PaymentBehavior::from( $this->paymentBehavior );
 		}
+	}
+
+	/** 轉換成人類可讀的陣列 */
+	public function to_human_array(): array {
+
+		$base_array = [
+			'付款方式' => $this->paymentMethod,
+		];
+
+		if ( isset( $this->subPaymentMethod ) ) {
+			$base_array['子付款方式'] = $this->subPaymentMethod;
+		}
+
+		return \array_merge(
+			$base_array,
+			$this->paidAmount->to_human_array(),
+			$this->creditCard?->to_human_array() ?? [],
+			$this->virtualAccount?->to_human_array() ?? [],
+			$this->paymentMethodOptions?->installments?->to_human_array() ?? [],
+		);
 	}
 }

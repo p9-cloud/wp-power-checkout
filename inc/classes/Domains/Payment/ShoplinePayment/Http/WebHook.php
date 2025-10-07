@@ -7,6 +7,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Session;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\EventTypeManager;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\EventType;
 use J7\PowerCheckout\Plugin;
 use J7\WpUtils\Classes\ApiBase;
@@ -54,13 +55,13 @@ final class WebHook extends ApiBase {
 	 * @return \WP_REST_Response 回應
 	 */
 	public function post_webhook_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		return new \WP_REST_Response( null, 200 );
 		$is_valid    = $this->is_valid( $request );
 		$body_params = $request->get_params();
 
 		try {
 			$webhook_dto = Body::create( $body_params );
-			$event_type  = $webhook_dto->get_event_type();
-			$event_type->get_manager()->update_order_status($webhook_dto);
+			EventTypeManager::update_order_status($webhook_dto);
 
 			// 收到通知就始終回 200 ，不用讓 SLP 重試
 			return new \WP_REST_Response( null, 200 );

@@ -1,13 +1,16 @@
 <?php
 
-declare (strict_types = 1);
+declare ( strict_types = 1 );
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
 use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook\Payment;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\StatusManager;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
+use J7\WpUtils\Classes\WP;
 
 /**
  * RedirectGateway 跳轉支付
@@ -30,10 +33,11 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	/**
 	 * Shopline 跳轉式支付核心支付邏輯
 	 *
-	 * @see \WC_Payment_Gateway::process_payment
 	 * @param \WC_Order $order 訂單
+	 *
 	 * @return string
 	 * @throws \Exception 如果訂單不存在
+	 * @see \WC_Payment_Gateway::process_payment
 	 */
 	protected function before_process_payment( \WC_Order $order ): string {
 		// 取得要跳轉的 url
@@ -73,11 +77,17 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 		}
 
 		if ( $min_amount < 5 ) {
-			$this->errors[] = sprintf( __( 'Save failed. %s minimum amount out of range.', 'power_checkout' ), $this->method_title );
+			$this->errors[] = sprintf(
+				__( 'Save failed. %s minimum amount out of range.', 'power_checkout' ),
+				$this->method_title
+			);
 		}
 
 		if ( $max_amount > 50000 ) {
-			$this->errors[] = sprintf( __( 'Save failed. %s maximum amount out of range.', 'power_checkout' ), $this->method_title );
+			$this->errors[] = sprintf(
+				__( 'Save failed. %s maximum amount out of range.', 'power_checkout' ),
+				$this->method_title
+			);
 		}
 
 		if ( $this->errors ) {
@@ -86,38 +96,6 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 		}
 
 		return parent::process_admin_options();
-	}
-
-	/** TODO 待處理
-	 * [Admin] 在後台 order detail 頁地址下方顯示資訊
-	 */
-	public function render_after_billing_address( \WC_Order $order ): void {
-		if ( $order->get_payment_method() !== $this->id ) {
-			return;
-		}
-		?>
-<h3 style="clear:both"><?php echo __( 'Payment details', 'power_checkout' ); ?>
-</h3>
-<table>
-	<tr>
-		<td><?php echo __( 'Bank', 'power_checkout' ); ?>
-		</td>
-		<td><?php echo _x( $order->get_meta( '_ecpay_atm_BankCode' ), 'Bank code', 'power_checkout' ); ?> (<?php echo $order->get_meta( '_ecpay_atm_BankCode' ); ?>)</td>
-	</tr>
-	<tr>
-		<td><?php echo __( 'ATM Bank account', 'power_checkout' ); ?>
-		</td>
-		<td><?php echo $order->get_meta( '_ecpay_atm_vAccount' ); ?>
-		</td>
-	</tr>
-	<tr>
-		<td><?php echo __( 'Payment deadline', 'power_checkout' ); ?>
-		</td>
-		<td><?php echo $order->get_meta( '_ecpay_atm_ExpireDate' ); ?>
-		</td>
-	</tr>
-</table>
-		<?php
 	}
 
 
@@ -131,16 +109,27 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	 * @param \WC_Order $order 訂單
 	 */
 	protected function before_order_received( \WC_Order $order ): void {
-		// as_enqueue_async_action( $hook, $args, $group, $unique, $priority );
-		$this->query_session( $order );
-
-		// 狀態轉為保留，因為 SLP 的付款成功狀態是非同步，所以待確認
-		// $order->update_status( 'wc-on-hold' );
-		// $order->add_order_note( \__( 'Shopline Payment 付款狀態確認中', 'power_checkout' ) );
+		$response_dto   = ( new ApiClient( $this, $order ) )->get_payment();
+		$status_manager = new StatusManager( $response_dto, $order );
+		$status_manager->update_order_status();
 	}
 
-	private function query_session( \WC_Order $order ) {
+	/** [Admin] 在後台 order detail 頁地址下方顯示資訊 */
+	public function render_after_billing_address( \WC_Order $order ): void {
+		if ( $order->get_payment_method() !== $this->id ) {
+			return;
+		}
 
-		( new ApiClient( $this, $order ) )->create_session();
+		$payment_detail_array = $order->get_meta( Params::PAYMENT_DETAIL_KEY );
+		if ( !$payment_detail_array ) {
+			return;
+		}
+		try {
+			$formatted_payment_detail = Payment::create( $payment_detail_array)->to_human_array();
+		} catch (\Exception $e) {
+			$formatted_payment_detail = $payment_detail_array;
+		}
+
+		echo WP::array_to_html( $formatted_payment_detail );
 	}
 }

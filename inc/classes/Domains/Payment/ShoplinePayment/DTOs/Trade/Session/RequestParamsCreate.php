@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session;
+namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;

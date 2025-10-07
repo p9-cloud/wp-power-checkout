@@ -6,10 +6,12 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session\RequestParamsCreate;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session\RequestParamsQuery;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session\ResponseParams;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session\RequestParamsCreate;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session\RequestParamsQuery;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session\ResponseParams as SessionResponseParams;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Helpers\Requester;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\RequestParamsGet;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\ResponseParams as PaymentResponseParams;
 
 /**
  * Shopline Payment 跳轉式支付服務類 工廠模式
@@ -43,22 +45,41 @@ final class ApiClient {
 	public function create_session(): string {
 		$request_body  = RequestParamsCreate::create( $this->gateway, $this->order )->to_array();
 		$response_body = $this->requester->post( '/trade/sessions/create', $request_body );
-		return ResponseParams::create( $response_body )->sessionUrl;
+		return SessionResponseParams::create( $response_body )->sessionUrl;
 	}
 
 	/**
 	 * 查詢結帳交易
 	 *
 	 * @see https://docs.shoplinepayments.com/api/trade/sessionQuery/
+	 * @return SessionResponseParams 結帳交易查詢結果
 	 * @throws \Exception 如果結帳交易查詢失敗
 	 *  */
-	public function query_session(): array {
+	public function get_session(): SessionResponseParams {
 		$request_body = RequestParamsQuery::create( $this->order )->to_array();
 
 		$response_body = $this->requester->post(
 			'/trade/sessions/query',
 			$request_body
 			);
-		return ResponseParams::create( $response_body )->to_array();
+		return SessionResponseParams::create( $response_body );
+	}
+
+
+	/**
+	 * 查詢付款交易
+	 *
+	 * @see https://docs.shoplinepayments.com/api/trade/query/
+	 * @return PaymentResponseParams 結帳交易查詢結果
+	 * @throws \Exception 如果結帳交易查詢失敗
+	 *  */
+	public function get_payment(): PaymentResponseParams {
+		$request_body = RequestParamsGet::create()->to_array();
+
+		$response_body = $this->requester->post(
+			'/trade/payment/get',
+			$request_body
+		);
+		return PaymentResponseParams::create( $response_body );
 	}
 }

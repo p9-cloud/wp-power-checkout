@@ -6,7 +6,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Helpers;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session\RequestHeader;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RequestHeader;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RegisterIntegration;
 
@@ -89,7 +89,7 @@ final class Requester {
 		}
 
 		$this->gateway->logger(
-				"✅ {$this->gateway->payment_label} 發送請求成功 #{$this->order->get_id()}",
+				"✅ {$this->gateway->payment_label} 發送 {$endpoint} 請求成功 #{$this->order->get_id()}",
 				'info',
 				$response_body
 				);

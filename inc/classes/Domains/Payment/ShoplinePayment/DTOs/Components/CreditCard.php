@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\CreditCardType;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
 
@@ -41,5 +42,22 @@ final class CreditCard extends DTO {
 		if (isset( $this->type)) {
 			Enums\CreditCardType::from( $this->type );
 		}
+	}
+
+
+	/** 轉換成人類可讀的陣列 */
+	public function to_human_array(): array {
+		$issuer_mapper = [
+			'TAISHIN INTERNATIONAL BANK' => '台新銀行',
+		];
+
+		return [
+			'信用卡卡別' => $this->brand . ( CreditCardType::tryFrom($this->type)?->label() ?? $this->type ), // Visa, MasterCard, JCB, etc.
+			'發卡行'   => $issuer_mapper[ $this->issuer ] ?? $this->issuer, // 銀行
+			'卡號前六碼' => $this->bin,
+			'卡號後四碼' => $this->last4,
+			'卡類別'   => $this->category, // SIGNATURE 簽賬卡?
+			'發卡國家'  => $this->issuerCountry,
+		];
 	}
 }

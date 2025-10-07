@@ -7,6 +7,7 @@ namespace J7\PowerCheckout\Domains\Payment\Shared\Abstracts;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\GatewaySupport;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
+use J7\PowerCheckout\Domains\Payment\Shared\Params;
 use J7\PowerCheckout\Domains\Settings\DTOs\FormFieldDTO;
 use J7\WpUtils\Classes\WP;
 
@@ -253,7 +254,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 			\wc_release_stock_for_order( $order );
 			return ProcessResult::SUCCESS->to_array( $redirect );
 		} catch (\Exception $e) {
-			$this->logger( $e->getMessage(), 'error', [], 5 );
+			$this->logger( "❌ {$this->payment_label} 處理結帳時發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
 			// 避免將錯誤資訊 print 到前端
 			\wc_add_notice( "處理結帳時發生錯誤，請查閱 {$this->payment_label} 的 log 紀錄了解詳情", 'error' );
 			return ProcessResult::FAILED->to_array();
@@ -298,12 +299,23 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	 * @return bool was anything saved?
 	 * @see WC_Settings_API::process_admin_options
 	 */
-	public function process_admin_options(): bool {
+	public function process_admin_options(): bool { // phpcs:ignore
 		return parent::process_admin_options();
 	}
 
 	/** [Admin] 在後台 order detail 頁地址下方顯示資訊 */
-	public function render_after_billing_address( \WC_Order $order ): void {}
+	public function render_after_billing_address( \WC_Order $order ): void {
+		if ( $order->get_payment_method() !== $this->id ) {
+			return;
+		}
+
+		$payment_detail_array = $order->get_meta( Params::PAYMENT_DETAIL_KEY );
+		if (!$payment_detail_array) {
+			return;
+		}
+
+		echo WP::array_to_html( $payment_detail_array);
+	}
 
 	/**
 	 * 在 /checkout/order-received/{$order_id}/?key=wc_order_{$order_key}，定義為 final method，不可被覆寫
@@ -325,6 +337,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 		if ($this->id === $order->get_payment_method() ) {
 			$this->record_exception_to_order_note($order);
 			$this->before_order_received( $order );
+			\WC()->cart->empty_cart();
 		}
 	}
 
@@ -332,7 +345,6 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	 * 第三方金流 callback 回來之後，頁面 render 前
 	 * 在 /checkout/order-received/{$order_id}/?key=wc_order_{$order_key}
 	 * 前執行
-	 * 不需要清空購物車， order-received 本來就會清
 	 *
 	 * 例如綠界需透過前端網頁導轉(Submit)到綠界付款API網址
 	 *
@@ -382,7 +394,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	 */
 	final public function logger( string $message, string $level = 'debug', array $args = [], $trace_limit = 0 ): void {
 		\J7\WpUtils\Classes\WC::logger( $message, $level, $args, "power_checkout_{$this->id}", $trace_limit );
-		if ( $this->order && in_array( $level, [ 'info', 'error', 'warning' ], true ) ) {
+		if ( $this->order && in_array( $level, [ 'error', 'warning' ], true ) ) {
 			$order_note = WP::array_to_html( $args, [ 'title' => $message ] );
 			$this->order->add_order_note( $order_note );
 		}

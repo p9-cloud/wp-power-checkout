@@ -60,7 +60,7 @@ final class Barcode extends PaymentGateway {
 	 * 應該是要作取號後，馬上跳轉感謝頁，不過應該不用這麼繞才對
 	 * Get the return url (thank you page).
 	 *
-	 * @param WC_Order|null $order Order object.
+	 * @param \WC_Order|null $order Order object.
 	 * @return string
 	 */
 	public function get_return_url( $order = null ) {

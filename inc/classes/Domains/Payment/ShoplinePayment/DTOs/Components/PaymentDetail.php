@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
 use J7\WpUtils\Classes\DTO;
 
 /**
@@ -11,12 +13,8 @@ use J7\WpUtils\Classes\DTO;
  * 回應會帶
  *  */
 final class PaymentDetail extends DTO {
-
-	/** @var string (64) *SLP 付款交易訂單編號 */
-	public string $tradeOrderId;
-
-	/** @var string (128) *付款狀態 */
-	public string $status;
+	use TradeOrderIdTrait;
+	use StatusTrait;
 
 	/** @var int *付款成功时间 */
 	public int $paymentSuccessTime;

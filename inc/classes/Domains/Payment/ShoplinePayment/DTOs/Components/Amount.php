@@ -50,4 +50,12 @@ final class Amount extends DTO {
 			throw new \Exception('value 長度不能超過 14 位，台幣金額不能超過 12 位');
 		}
 	}
+
+	/** 轉換成人類可讀的陣列 */
+	public function to_human_array(): array {
+		return [
+			'金額' => $this->value,
+			'幣別' => $this->currency,
+		];
+	}
 }

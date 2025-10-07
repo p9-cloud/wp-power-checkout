@@ -25,11 +25,7 @@ enum ResponseStatus: string {
 	/** @var string 已取消 */
 	case CANCELLED = 'CANCELLED';
 
-	/**
-	 * 取得狀態的標籤
-	 *
-	 * @return string 狀態的標籤
-	 */
+	/** @return string 取得狀態的標籤 */
 	public function label(): string {
 		return match ( $this ) {
 			self::CREATED => '建立',
@@ -40,6 +36,21 @@ enum ResponseStatus: string {
 			self::FAILED => '失敗',
 			self::CANCELLED => '已取消',
 			self::EXPIRED => '已過期',
+		};
+	}
+
+
+	/** @return string 取得狀態的 Emoji */
+	public function emoji(): string {
+		return match ( $this ) {
+			self::CREATED => '🆕',
+			self::CUSTOMER_ACTION => '🧑‍💻',
+			self::PROCESSING => '🚧',
+			self::PENDING => '🟧',
+			self::SUCCEEDED => '✅',
+			self::FAILED => '❌',
+			self::CANCELLED => '🚫',
+			self::EXPIRED => '⌛',
 		};
 	}
 }

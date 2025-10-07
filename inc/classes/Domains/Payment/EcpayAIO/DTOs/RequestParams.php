@@ -239,7 +239,7 @@ final class RequestParams extends DTO {
 		}
 
 		( new Helper($this->MerchantTradeNo, 'MerchantTradeNo', 20) )->validate();
-		( new Helper($this->TradeDesc, 'TradeDesc', 200) )->validate();
+		( new Helper($this->TradeDesc, 'TradeDesc', 200) )->validate_strlen();
 
 		$payment_options = [ 'Credit', 'TWQR', 'WebATM', 'ATM', 'CVS', 'BARCODE', 'ApplePay', 'BNPL' ];
 		if (!in_array($this->ChoosePayment, [ ...$payment_options, 'ALL' ], true)) {

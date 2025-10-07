@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session;
+namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs;
 
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Utils\Helper;

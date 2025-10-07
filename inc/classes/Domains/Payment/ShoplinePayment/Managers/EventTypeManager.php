@@ -37,7 +37,7 @@ final class EventTypeManager {
 	 * @ref https://docs.shoplinepayments.com/api/event/model/
 	 * 只需處理 Session 的 webhook，因為只有 Session 有帶 referenceId (對應 order_id)
 	 */
-	public function update_order_status( Body $webhook_dto ): void {
+	public static function update_order_status( Body $webhook_dto ): void {
 		$event_type = $webhook_dto->get_event_type();
 		if (!$event_type->is_trade_event_type()) {
 			return;
@@ -53,11 +53,11 @@ final class EventTypeManager {
 		$data = $webhook_dto->data;
 		if ( $data->paymentDetails && is_array( $data->paymentDetails ) ) {
 			foreach ( $data->paymentDetails as $payment_detail ) {
-				$payment_detail_html = WP::array_to_html($payment_detail->to_array(), [ 'title' => $this->event_type->label() ]);
+				$payment_detail_html = WP::array_to_html($payment_detail->to_array(), [ 'title' => $event_type->label() ]);
 				$order->add_order_note($payment_detail_html);
 			}
 		} else {
-			$order->add_order_note($this->event_type->label());
+			$order->add_order_note($event_type->label());
 		}
 
 		$order_status = match ( $event_type ) {

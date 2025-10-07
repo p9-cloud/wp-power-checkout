@@ -17,7 +17,10 @@ class Params {
 	public const RESPONSE_KEY = 'pc_payment_res_params';
 
 	/** @var string 專門儲存第三方金流那邊的識別碼 例如：SLP 的 sessionId  */
-	public const IDENTITY_KEY = 'pc_identity_key';
+	public const IDENTITY_KEY = 'pc_identity';
+
+	/** @var string 紀錄付款詳情 */
+	public const PAYMENT_DETAIL_KEY = 'pc_payment_detail';
 
 	/** Construct */
 	public function __construct(

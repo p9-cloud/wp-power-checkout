@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AdditionalDataTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook;
 
@@ -13,6 +14,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook;
  * @see https://docs.shoplinepayments.com/api/event/model/instrument/
  */
 final class Instrument extends DTO {
+	use AdditionalDataTrait;
 
 	/** @var string *會員 ID*/
 	public string $customerId;
@@ -22,9 +24,6 @@ final class Instrument extends DTO {
 
 	/** @var Webhook\PaymentInstrument *付款工具*/
 	public Webhook\PaymentInstrument $paymentInstrument;
-
-	/** @var string|null 附加資訊 選填*/
-	public string|null $additionalData;
 
 	/**
 	 * 透傳資訊 選填，JSON string

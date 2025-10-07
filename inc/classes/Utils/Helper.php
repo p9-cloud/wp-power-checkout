@@ -24,11 +24,25 @@ final class Helper {
 	 * @throws \Exception 如果字串長度超過最大長度
 	 */
 	public function get_strlen( bool $throw_error = false ): int {
-		$strlen = mb_strlen($this->value, 'UTF-8');
-		if ( $throw_error && $strlen > $this->max_length ) {
-			throw new \Exception("{$this->name} 字串長度不能超過 {$this->max_length} 個字，目前為 {$strlen} 個字");
+		$strlen = \mb_strlen($this->value, 'UTF-8');
+		if ( $throw_error ) {
+			$this->validate_strlen();
 		}
 		return $strlen;
+	}
+
+
+	/**
+	 * 驗證中文 & 英文 & 數字字數長度
+	 *
+	 * @return void
+	 * @throws \Exception 如果字串長度超過最大長度
+	 */
+	public function validate_strlen(): void {
+		$strlen = \mb_strlen($this->value, 'UTF-8');
+		if ( $strlen > $this->max_length ) {
+			throw new \Exception("{$this->name} 字串長度不能超過 {$this->max_length} 個字，目前為 {$strlen} 個字");
+		}
 	}
 
 
@@ -44,10 +58,27 @@ final class Helper {
 	 */
 	public function has_special_char( bool $throw_error = false ): bool {
 		$has_special_char = preg_match('/[^\p{Han}a-zA-Z0-9 ]/u', $this->value) === 1;
-		if ( $throw_error && $has_special_char ) {
-			throw new \Exception("不能包含特殊字元，{$this->name}:{$this->value}");
+		if ( $throw_error) {
+			$this->validate_special_char();
 		}
 		return $has_special_char;
+	}
+
+
+	/**
+	 * 驗證配所有非中文、英文和數字的字符
+	 * \p{Han} 匹配所有中文字符
+	 * a-zA-Z 匹配所有英文字母
+	 * 0-9 匹配所有數字
+	 *
+	 * @return void
+	 * @throws \Exception 如果字串包含特殊字元
+	 */
+	public function validate_special_char(): void {
+		$has_special_char = preg_match('/[^\p{Han}a-zA-Z0-9 ]/u', $this->value) === 1;
+		if ( $has_special_char ) {
+			throw new \Exception("不能包含特殊字元，{$this->name}:{$this->value}");
+		}
 	}
 
 	/**
@@ -85,7 +116,7 @@ final class Helper {
 	 * @throws \Exception 如果字串長度超過最大長度
 	 */
 	public function validate(): void {
-		$this->get_strlen(true);
-		$this->has_special_char(true);
+		$this->validate_strlen();
+		$this->validate_special_char();
 	}
 }

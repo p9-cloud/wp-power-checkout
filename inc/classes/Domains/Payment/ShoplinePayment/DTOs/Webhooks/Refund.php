@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 
@@ -13,21 +16,15 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
  * @see https://docs.shoplinepayments.com/api/event/model/refund/
  */
 final class Refund extends DTO {
+	use ReferenceOrderIdTrait;
+	use TradeOrderIdTrait;
+	use StatusTrait;
 
 	/** @var string *SLP 退款訂單號 (32)*/
 	public string $refundOrderId;
 
-	/** @var string *特店訂單號 (32)*/
-	public string $referenceOrderId;
-
-	/** @var string *SLP 付款交易訂單編號 (32)*/
-	public string $tradeOrderId;
-
 	/** @var Components\Amount *訂單金額*/
 	public Components\Amount $amount;
-
-	/** @var ResponseStatus::value *退款狀態 (32) 參考 */
-	public string $status;
 
 	/** @var Components\PaymentError|null 退款失敗原因 選填 */
 	public Components\PaymentError|null $refundMsg;

@@ -13,8 +13,8 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Installment
  * */
 final class PaymentMethodOptions extends DTO {
 
-	/** @var Installments 支援分期的付款方式的分期資訊*/
-	public Installments $installments;
+	/** @var Installments|null 支援分期的付款方式的分期資訊*/
+	public Installments|null $installments = null;
 
 	/**
 	 * @param array<string, mixed> $args 原始資料

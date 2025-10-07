@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Session;
+namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
@@ -14,15 +15,13 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
  * @see https://docs.shoplinepayments.com/api/trade/session/
  */
 final class ResponseParams extends DTO {
+	use StatusTrait;
 
 	/** @var string *SLP 結帳交易訂單編號 (32) */
 	public string $sessionId;
 
 	/** @var string *特店訂單號 (32) */
 	public string $referenceId;
-
-	/** @var Enums\ResponseStatus::value *結帳交易狀態 (16) */
-	public string $status;
 
 	/** @var string *結帳交易提供給顧客付款的 URL (256) */
 	public string $sessionUrl;
