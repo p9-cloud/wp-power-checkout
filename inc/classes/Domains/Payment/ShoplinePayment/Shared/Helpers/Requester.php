@@ -45,8 +45,6 @@ final class Requester {
 	 */
 	public function post( string $endpoint, array $request_body = [] ): array {
 		$api_url = $this->get_endpoint( $endpoint );
-		// 儲存請求參數
-		( new Params( $this->order ) )->save_request( $request_body, $api_url );
 
 		$request_header = RequestHeader::create( $this->order )->to_array();
 
@@ -65,12 +63,10 @@ final class Requester {
 		}
 
 		/** @var array<string, mixed>|array{code: int, msg: string} $response_body */
-		$response_body = json_decode( \wp_remote_retrieve_body( $response ), true );
-		// 儲存回應參數
-		( new Params( $this->order ) )->save_response( $response_body, RegisterIntegration::$identity_array_key );
+		$response_body = \json_decode( \wp_remote_retrieve_body( $response ), true );
 		// LOG 記錄
 		$this->gateway->logger(
-				"{$this->gateway->payment_label} 請求參數 #{$this->order->get_id()}",
+				"{$this->gateway->payment_label} {$endpoint} 請求參數 #{$this->order->get_id()}",
 				'debug',
 				[
 					'api_url'        => $api_url,
@@ -81,7 +77,7 @@ final class Requester {
 
 		if ( isset( $response_body['code'] ) ) {
 			$this->gateway->logger(
-				"❌ {$this->gateway->payment_label} 交易失敗 #{$this->order->get_id()}",
+				"❌ {$this->gateway->payment_label} {$endpoint} 交易失敗 #{$this->order->get_id()}",
 				'error',
 				$response_body
 				);

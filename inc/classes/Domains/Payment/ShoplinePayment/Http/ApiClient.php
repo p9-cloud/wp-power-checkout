@@ -68,7 +68,6 @@ final class ApiClient {
 
 	/**
 	 * 查詢付款交易
-	 * TODO 避免重複發送
 	 *
 	 * @see https://docs.shoplinepayments.com/api/trade/query/
 	 * @return PaymentResponseParams 結帳交易查詢結果

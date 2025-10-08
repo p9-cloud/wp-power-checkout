@@ -47,8 +47,7 @@ final class StatusManager {
 	public function update_order_status(): void {
 		$payment_detail_html = $this->_response_dto->to_human_html();
 		$this->_order->add_order_note($payment_detail_html);
-		$this->_order->update_meta_data( Params::PAYMENT_DETAIL_KEY, $this->_response_dto->to_array() );
-		$this->_order->save_meta_data();
+		( new Params($this->_order) )->update_payment_detail($this->_response_dto->to_array() );
 
 		$status_enum  = ResponseStatus::tryFrom($this->_response_dto->status);
 		$order_status = match ( $status_enum ) {

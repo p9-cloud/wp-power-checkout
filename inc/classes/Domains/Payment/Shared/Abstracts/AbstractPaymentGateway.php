@@ -309,7 +309,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 			return;
 		}
 
-		$payment_detail_array = $order->get_meta( Params::PAYMENT_DETAIL_KEY );
+		$payment_detail_array = ( new Params($order) )->get_payment_detail();
 		if (!$payment_detail_array) {
 			return;
 		}

@@ -209,18 +209,6 @@ final class RequestParams extends DTO {
 		return new self($args);
 	}
 
-	/**
-	 * 從訂單取得 request params
-	 *
-	 * @param \WC_Order $order 訂單
-	 * @return self
-	 * */
-	public static function instance_from_order( \WC_Order $order ): self {
-		/** @var array<string, mixed> $args */
-		$args = ( new Params($order) )->get_request();
-		return new self( $args );
-	}
-
 	/** 初始化後執行 */
 	protected function after_init(): void {
 		$this->add_check_value( 'sha256' );

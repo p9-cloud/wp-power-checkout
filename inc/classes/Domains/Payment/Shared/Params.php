@@ -10,83 +10,82 @@ namespace J7\PowerCheckout\Domains\Payment\Shared;
  */
 class Params {
 
-	/** @var string 請求參數 meta_key */
-	public const REQUEST_KEY = 'pc_payment_req_params';
+	/** @var string 專門儲存第三方金流那邊的識別碼，可以對應訂單 例如：SLP 的 sessionId  */
+	private const IDENTITY_KEY = 'pc_identity';
 
-	/** @var string 回應參數 meta_key */
-	public const RESPONSE_KEY = 'pc_payment_res_params';
-
-	/** @var string 專門儲存第三方金流那邊的識別碼 例如：SLP 的 sessionId  */
-	public const IDENTITY_KEY = 'pc_identity';
+	/** @var string 專門儲存第三方金流那邊的識別碼，可以對應付款(因為一筆訂單可以有多次付款) 例如：SLP 的 tradeOrderId  */
+	private const IDENTITY_PAYMENT_KEY = 'pc_payment_identity';
 
 	/** @var string 紀錄付款詳情 */
-	public const PAYMENT_DETAIL_KEY = 'pc_payment_detail';
+	private const PAYMENT_DETAIL_KEY = 'pc_payment_detail';
 
 	/** Construct */
 	public function __construct(
-		private readonly \WC_Order $order,
+		private readonly \WC_Order $_order,
 	) {}
 
 	/**
-	 * 儲存請求參數
+	 * 取得訂單識別碼
 	 *
-	 * @param array<string, mixed> $params 儲存請求參數
-	 * @param string               $url 請求 URL
-	 * @return self
+	 * @return string
 	 */
-	public function save_request( array $params, string $url ): self {
-		$this->order->update_meta_data(
-			self::REQUEST_KEY,
-			[
-				'params' => $params,
-				'url'    => $url,
-			]
-			);
-		$this->order->save_meta_data();
-		return $this;
+	public function get_identity(): string {
+		$payment_detail_array = $this->_order->get_meta( self::IDENTITY_KEY ) ?: '';
+		return (string) $payment_detail_array;
 	}
 
 	/**
-	 * 取得請求參數
+	 * 儲存訂單識別碼
 	 *
-	 * @param string $key 取得請求參數的 key
-	 * @return array<string, mixed> 請求參數
+	 * @param string $value 訂單識別碼
+	 * @return void
 	 */
-	public function get_request( string $key = 'params' ): array {
-		$params = $this->order->get_meta( self::REQUEST_KEY );
-		$params = is_array( $params ) ? $params : [];
-		return $key ? ( $params[ $key ] ?? [] ) : $params;
+	public function update_identity( string $value ): void {
+		$this->_order->update_meta_data( self::IDENTITY_KEY, $value );
+		$this->_order->save_meta_data();
+	}
+
+
+	/**
+	 * 取得付款識別碼
+	 *
+	 * @return string
+	 */
+	public function get_payment_identity(): string {
+		$payment_detail_array = $this->_order->get_meta( self::IDENTITY_PAYMENT_KEY ) ?: '';
+		return (string) $payment_detail_array;
 	}
 
 	/**
-	 * 儲存回應
+	 * 儲存付款識別碼
 	 *
-	 * @param array<string, mixed> $params 儲存回應參數 @return self
-	 * @param string               $identity_array_key 儲存識別碼的參數 key，例如 SLP 的 sessionId
+	 * @param string $value 付款識別碼
+	 * @return void
 	 */
-	public function save_response( array $params, string $identity_array_key = '' ): self {
-		$this->order->update_meta_data(
-			self::RESPONSE_KEY,
-			[
-				'params' => $params,
-			]
-			);
-		if ($identity_array_key && isset($params[ $identity_array_key ])) {
-			$this->order->update_meta_data( self::IDENTITY_KEY, $params[ $identity_array_key ]);
-		}
-		$this->order->save_meta_data();
-		return $this;
+	public function update_payment_identity( string $value ): void {
+		$this->_order->update_meta_data( self::IDENTITY_PAYMENT_KEY, $value );
+		$this->_order->save_meta_data();
+	}
+
+
+	/**
+	 * 取得付款詳情 array
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_payment_detail(): array {
+		$payment_detail_array = $this->_order->get_meta( self::PAYMENT_DETAIL_KEY ) ?: [];
+		return is_array($payment_detail_array) ? $payment_detail_array : [];
 	}
 
 	/**
-	 * 取得回應參數
+	 * 儲存付款詳情 array
 	 *
-	 * @param ?string $key 取得回應參數的 key
-	 * @return array<string, mixed> 回應參數
+	 * @param array<string, mixed> $value 付款詳情 array
+	 * @return void
 	 */
-	public function get_response( ?string $key = null ): array {
-		$params = $this->order->get_meta( self::RESPONSE_KEY );
-		$params = \is_array( $params ) ? $params : [];
-		return $key ? ( $params[ $key ] ?? [] ) : $params;
+	public function update_payment_detail( array $value ): void {
+		$this->_order->update_meta_data( self::PAYMENT_DETAIL_KEY, $value );
+		$this->_order->save_meta_data();
 	}
 }

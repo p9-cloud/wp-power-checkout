@@ -54,7 +54,7 @@ final class Api extends ApiBase {
 			// 收到綠界回傳值後儲存訂單的 transaction_id 以及相關資料，還有修改狀態
 			$this->set_transaction_info( $response_params );
 			return $this->response_to_ecpay( true );
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			// $service->error->add( 400, $th->getMessage() );
 			return $this->response_to_ecpay( $is_check_value_valid );
 		}
@@ -136,7 +136,6 @@ final class Api extends ApiBase {
 		// 如果都不是以上狀況那就是 RtnCode=1 (交易成功)
 		// 設定訂單的交易編號
 		$order->set_transaction_id( $response_params->TradeNo );
-		(new Params($order))->save_response( $response_params->to_array(), RegisterIntegration::$identity_array_key );
 		$order->payment_complete(); // 修改狀態為 processing | completed
 		// phpcs:enable
 

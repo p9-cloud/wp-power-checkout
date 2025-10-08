@@ -16,7 +16,6 @@ use J7\WpUtils\Classes\WP;
 
 /**
  * RedirectGateway 跳轉支付
- * TODO Shopline payment 似乎是跳轉到 Shopline 的頁面才選擇支付方式，與綠界不同  確認後，再改成正確的備註
  * */
 final class RedirectGateway extends PaymentGateway implements IGateway {
 
@@ -126,12 +125,23 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	 */
 	protected function before_order_received( \WC_Order $order ): void {
 		try {
-			if (!isset($_GET['tradeOrderId'])) { //phpcs:ignore
+            $trade_order_id = $_GET['tradeOrderId'] ?? '';//phpcs:ignore
+			if (!$trade_order_id) {
 				return;
 			}
+			$order_params = new Params($order);
+			// 檢查 payment_identity (tradeOrderId) 是否重複，重複代表發過，就不用再發 API
+			$payment_identity = $order_params->get_payment_identity();
+			if ($payment_identity === $trade_order_id) {
+				return;
+			}
+
 			$response_dto   = ( new ApiClient( $this, $order ) )->get_payment();
 			$status_manager = new StatusManager( $response_dto, $order );
 			$status_manager->update_order_status();
+
+			// 儲存 payment_identity
+			$order_params->update_payment_identity( $response_dto->tradeOrderId);
 		} catch (\Throwable $e) {
 			$this->logger( "❌ {$this->payment_label} 發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
 		}
@@ -143,7 +153,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 			return;
 		}
 
-		$payment_detail_array = $order->get_meta( Params::PAYMENT_DETAIL_KEY );
+		$payment_detail_array = ( new Params( $order) )->get_payment_detail();
 		if ( !$payment_detail_array ) {
 			return;
 		}
