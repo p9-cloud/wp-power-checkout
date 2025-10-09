@@ -19,7 +19,7 @@ final class Barcode extends PaymentGateway {
 
 	/** Constructor */
 	public function __construct() {
-		$this->payment_label = __( 'ECPayAIO Barcode', 'power_checkout' );
+		$this->title = __( 'ECPayAIO Barcode', 'power_checkout' );
 		parent::__construct();
 	}
 

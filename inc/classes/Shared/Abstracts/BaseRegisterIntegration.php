@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Shared\Abstracts;
 
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 
 abstract class BaseRegisterIntegration {
@@ -25,19 +25,4 @@ abstract class BaseRegisterIntegration {
 
 	/** Register hooks */
 	abstract public static function register_hooks(): void;
-
-	/** 儲存，可以部分更新
-	 *
-	 * @param array $data 儲存這個 integration data
-	 * @return void
-	 * @throws \Exception 如果驗證失敗
-	 */
-	abstract public static function save_settings( array $data ): void;
-
-
-	/** @return array 取得設定 */
-	public static function get_settings(): array {
-		$data = SettingTabService::get_settings( self::$setting_key );
-		return ( new SettingsDTO( $data) )->to_array();
-	}
 }

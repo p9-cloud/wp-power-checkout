@@ -19,7 +19,7 @@ class Credit extends PaymentGateway {
 
 	/** Constructor */
 	public function __construct() {
-		$this->payment_label = __( 'ECPayAIO Credit', 'power_checkout' );
+		$this->title = __( 'ECPayAIO Credit', 'power_checkout' );
 		parent::__construct();
 	}
 

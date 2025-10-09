@@ -27,7 +27,7 @@ class BlocksIntegration extends \Automattic\WooCommerce\Blocks\Payments\Integrat
 
 	/** @param AbstractPaymentGateway $gateway 付款方式 */
 	public function __construct( private readonly AbstractPaymentGateway $gateway ) {
-		$this->name    = $gateway->id;
+		$this->name = $gateway->id;
 	}
 
 	/**
@@ -70,18 +70,18 @@ class BlocksIntegration extends \Automattic\WooCommerce\Blocks\Payments\Integrat
 
 		return [ $handle ];
 	}
-    
-    /** @return array<string, mixed> 給前端取得的付款方式資料 */
+
+	/** @return array<string, mixed> 給前端取得的付款方式資料 */
 	public function get_payment_method_data(): array {
 		return [
 			'name'              => $this->name,
-			'title'             => $this->gateway->payment_label,
+			'title'             => $this->gateway->title,
 			'description'       => $this->gateway->description,
 			'supports'          => $this->gateway->supports,
 			'order_button_text' => $this->gateway->order_button_text,
 			'icons'             => [
 				'src' => $this->gateway->icon,
-				'alt' => $this->gateway->payment_label,
+				'alt' => $this->gateway->title,
 			],
 		];
 	}

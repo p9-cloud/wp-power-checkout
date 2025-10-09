@@ -5,13 +5,16 @@ declare ( strict_types = 1 );
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
 use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
+use J7\PowerCheckout\Domains\Payment\Contracts\IGatewaySettings;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\ResponseParams;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\StatusManager;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
+use J7\WpUtils\Classes\DTO;
 use J7\WpUtils\Classes\WP;
 
 /**
@@ -25,11 +28,11 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	/** @var string 付款方式 ID */
 	public $id = self::ID;
 
-	/** Constructor */
-	public function __construct() {
-		$this->payment_label = \__( 'Shopline Payment (導轉式)', 'power_checkout' );
-		parent::__construct();
-	}
+	/** @var string 後台顯示付款方式標題 */
+	public $method_title = 'Shopline Payment (導轉式)';
+
+	/** @var string 後台顯示付款方式描述 */
+	public $method_description = '';
 
 	/**
 	 * Shopline 跳轉式支付核心支付邏輯
@@ -83,13 +86,8 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 			$max_amount_name  => $max_amount,
 		] = $this->get_post_data();
 
-		$expire_date = (int) $expire_date;
-		$min_amount  = (float) $min_amount;
-		$max_amount  = (float) $max_amount;
-
-		if ( $expire_date < 1 || $expire_date > 60 ) {
-			$this->errors[] = __( 'Save failed. ATM payment deadline out of range.', 'power_checkout' );
-		}
+		$min_amount = (float) $min_amount;
+		$max_amount = (float) $max_amount;
 
 		if ( $min_amount < 5 ) {
 			$this->errors[] = sprintf(
@@ -112,6 +110,18 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 
 		return parent::process_admin_options();
 	}
+
+
+	/**
+	 * 過濾預設的表單欄位
+	 *
+	 * @param array<string, mixed> $fields 表單欄位
+	 *
+	 * @return array<string, mixed> 過濾後的表單欄位
+	 * */
+	// public function filter_fields( array $fields ): array {
+	// return [];
+	// }
 
 
 	/**
@@ -143,7 +153,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 			// 儲存 payment_identity
 			$order_params->update_payment_identity( $response_dto->tradeOrderId);
 		} catch (\Throwable $e) {
-			$this->logger( "❌ {$this->payment_label} 發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
+			$this->logger( "❌ {$this->title} 發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
 		}
 	}
 
@@ -164,5 +174,10 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 		}
 
 		echo $html;
+	}
+
+	/** @return IGatewaySettings 取得 gateway 設定 */
+	public function get_settings(): DTO {
+		return RedirectSettingsDTO::instance();
 	}
 }

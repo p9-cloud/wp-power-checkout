@@ -6,29 +6,30 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use J7\PowerCheckout\Domains\Payment\Contracts\IRegisterGateway;
+use J7\PowerCheckout\Domains\Payment\Shared\Utils\GatewayUtils;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\WpUtils\Classes\General;
 use J7\PowerCheckout\Domains\Payment\Shared\BlocksIntegration;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
-use J7\PowerCheckout\Utils\IntegrationUtils;
 
 /**
  * Payment Gateway (API 為 base)
  * 整合不同的 Payment Gateway
  * 例如 ECPayAIO 裡面有 ATM, Credit, CVS 等等 Payment Gateway
  */
-final class RegisterGateway implements IRegisterGateway {
+final class RegisterGateways implements IRegisterGateway {
 
 	/** Register hooks */
 	public static function register_hooks(): void {
-		$integration = IntegrationUtils::get_integration( RegisterIntegration::$integration_key);
+		$settings = RedirectSettingsDTO::instance();
+		\add_filter( 'woocommerce_payment_gateways', [ __CLASS__ , 'add_method' ] );
 
-		if (!$integration?->enabled) {
+		if (!$settings->is_enabled()) {
 			return;
 		}
 
 		WebHook::instance();
 		// 添加付款方式
-		\add_filter( 'woocommerce_payment_gateways', [ __CLASS__ , 'add_method' ] );
 
 		// 整合區塊結帳
 		\add_action( 'woocommerce_blocks_payment_method_type_registration', [ __CLASS__, 'register_checkout_blocks' ] );
@@ -46,9 +47,7 @@ final class RegisterGateway implements IRegisterGateway {
 			return;
 		}
 
-		$gateways = \WC()->payment_gateways()->payment_gateways;
-
-		$gateway = General::array_find($gateways, static fn( $gateway ) => $gateway->id === RedirectGateway::ID);
+		$gateway = GatewayUtils::get_gateway( RedirectGateway::ID);
 
 		if (!$gateway) {
 			return;

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
-use J7\PowerCheckout\Utils\IntegrationUtils;
+use J7\PowerCheckout\Domains\Payment\Shared\Utils\GatewayUtils;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\WpUtils\Classes\ApiBase;
 use J7\WpUtils\Classes\WP;
 use J7\WpUtils\Traits\SingletonTrait;
@@ -23,22 +25,23 @@ final class SettingApiService extends ApiBase {
 	/** @var array 已註冊的 API 列表 */
 	protected $apis = [
 		[
-			'endpoint' => 'integrations',
+			'endpoint' => 'gateways',
 			'method'   => 'get',
 		],
 		[
-			'endpoint' => 'toggle-integration',
+			'endpoint' => 'gateways/(?P<gateway_id>[a-zA-Z_-]+)/toggle',
 			'method'   => 'post',
+			'callback' => [ __CLASS__, 'toggle_gateways_with_gateway_id_callback' ],
 		],
 		[
-			'endpoint' => 'settings/(?P<setting_key>[a-zA-Z_-]+)',
+			'endpoint' => 'gateways/(?P<gateway_id>[a-zA-Z_-]+)/settings',
 			'method'   => 'get',
-			'callback' => [ __CLASS__, 'get_settings_with_integration_key_callback' ],
+			'callback' => [ __CLASS__, 'get_gateways_settings_with_id_callback' ],
 		],
 		[
-			'endpoint' => 'settings/(?P<setting_key>[a-zA-Z_-]+)',
+			'endpoint' => 'gateways/(?P<gateway_id>[a-zA-Z_-]+)/settings',
 			'method'   => 'post',
-			'callback' => [ __CLASS__, 'post_settings_with_integration_key_callback' ],
+			'callback' => [ __CLASS__, 'post_gateways_settings_with_id_callback' ],
 		],
 	];
 
@@ -56,16 +59,19 @@ final class SettingApiService extends ApiBase {
 	 *
 	 * @return \WP_REST_Response
 	 */
-	public static function get_settings_with_integration_key_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$setting_key            = (string) $request['setting_key'];
-		$integration            = IntegrationUtils::find_integration( $setting_key);
-		$registered_integration = $integration->get_registered_integration();
+	public static function get_gateways_settings_with_id_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$gateway_id = (string) $request['gateway_id'];
+        $gateway    = GatewayUtils::get_gateway($gateway_id);
+        if(!$gateway) {
+            throw new \Exception("Can't find Gateway with gateway_id:{$gateway_id}");
+        }
+		$settings   =$gateway->get_settings();
 
 		return new \WP_REST_Response(
 			[
 				'code'    => 'success',
-				'message' => "取得 {$setting_key} 設定成功",
-				'data'    => $registered_integration::get_settings(),
+				'message' => "取得 {$gateway_id} 設定成功",
+				'data'    => $settings->to_array(true),
 			],
 			200
 			);
@@ -78,20 +84,23 @@ final class SettingApiService extends ApiBase {
 	 *
 	 * @return \WP_REST_Response
 	 */
-	public static function post_settings_with_integration_key_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$setting_key = (string) $request['setting_key'];
-		$integration = IntegrationUtils::find_integration( $setting_key);
+	public static function post_gateways_settings_with_id_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$gateway_id = (string) $request['gateway_id'];
+		$gateway    = GatewayUtils::get_gateway($gateway_id);
+		if (!$gateway) {
+			throw new \Exception("Can't find Gateway with gateway_id:{$gateway_id}");
+		}
 
 		$params = $request->get_params();
 		$params = WP::sanitize_text_field_deep($params, false );
 
-		$registered_integration = $integration->get_registered_integration();
-		$registered_integration::save_settings( $params );
+		GatewayUtils::update_option( $gateway_id, $params);
+
 		return new \WP_REST_Response(
 			[
 				'code'    => 'success',
 				'message' => '儲存成功',
-				'data'    => $registered_integration::get_settings(),
+				'data'    => GatewayUtils::get_option( $gateway_id),
 			],
 			200
 		);
@@ -101,49 +110,44 @@ final class SettingApiService extends ApiBase {
 
 
 
-	// region Integrations 相關
+	// region Gateways 相關
 
 	/**
-	 * 取得 integrations 設定
+	 * 取得 gateways 設定
 	 *
 	 * @param \WP_REST_Request $request Request.
 	 *
 	 * @return \WP_REST_Response
 	 */
-	public function get_integrations_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$integrations = IntegrationUtils::get_integrations();
-
-		$integrations_array = \array_map(static fn( $integration ) => $integration->to_array(), $integrations);
-
-		return new \WP_REST_Response( $integrations_array, 200 );
+	public function get_gateways_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$gateways = GatewayUtils::get_gateways(false, true);
+		return new \WP_REST_Response( $gateways, 200 );
 	}
 
 	/**
-	 * 開關 Integration
+	 * 開關 Gateway
 	 *
 	 * @param \WP_REST_Request $request Request.
 	 *
 	 * @return \WP_REST_Response
-	 * @throws \Exception 如果 integration_key 無效或其他錯誤
+	 * @throws \Exception 如果 gateway_key 無效或其他錯誤
 	 */
-	public function post_toggle_integration_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$integration_key = (string) $request->get_param( 'integration_key' );
-		$integration     = IntegrationUtils::get_integration( $integration_key);
+	public static function toggle_gateways_with_gateway_id_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$gateway_id = (string) $request['gateway_id'];
+		$gateway    = GatewayUtils::get_gateway($gateway_id);
 
-		if (!$integration) {
-			throw new \Exception("Can't find Integration with {$integration_key} key");
+		if (!$gateway) {
+			throw new \Exception("Can't find Gateway with gateway_id:{$gateway_id}");
 		}
 
-		$integration->toggle();
-
-		$updated_integration = IntegrationUtils::get_integration($integration_key);
-		$toggle_text         = $updated_integration?->enabled ? '啟用' : '禁用';
+		GatewayUtils::toggle( $gateway_id);
+		$toggle_text = \wc_string_to_bool( GatewayUtils::get_option( $gateway_id, 'enabled')) ? '啟用' : '禁用';
 
 		return new \WP_REST_Response(
 			[
 				'code'    => 'success',
-				'message' => "{$updated_integration?->name} {$toggle_text}成功",
-				'data'    => $updated_integration?->to_array(),
+				'message' => "{$gateway?->title} {$toggle_text}成功",
+				'data'    => $gateway,
 			],
 			200
 		);

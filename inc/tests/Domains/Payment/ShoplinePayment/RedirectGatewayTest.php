@@ -9,9 +9,7 @@ namespace J7\PowerCheckoutTests\Domains\Payment\ShoplinePayment;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RegisterIntegration;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
-use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\PowerCheckoutTests\Attributes\Create;
 use J7\PowerCheckoutTests\Helper\Order;
 use J7\PowerCheckoutTests\Helper\Requester;
@@ -42,13 +40,6 @@ class RedirectGatewayTest extends WC_UnitTestCase {
     
     /** 每個測試方法執行前執行一次 */
     public function set_up(): void {
-        // 先儲存數據
-        $settings                           = SettingTabService::get_settings();
-        $settings[ RegisterIntegration::$integration_key ] = [
-            'enabled' => true,
-        ];
-        SettingTabService::save_settings($settings);
-        
         
         // 呼叫 hook 註冊 API
         parent::set_up();

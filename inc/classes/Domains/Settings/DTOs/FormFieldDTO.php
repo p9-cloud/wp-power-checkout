@@ -10,6 +10,8 @@ use J7\WpUtils\Classes\DTO;
  * FormField
  * 描述 WC_Settings_API 的 form_fields 的單一欄位
  *
+ * @deprecated
+ *
  * @see https://developer.woocommerce.com/docs/settings-api/
  *  */
 class FormFieldDTO extends DTO {

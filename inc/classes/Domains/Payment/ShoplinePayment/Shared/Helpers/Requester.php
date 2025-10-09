@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Helpers;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
-use J7\PowerCheckout\Domains\Payment\Shared\Params;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RequestHeader;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RegisterIntegration;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 
 
 /**
@@ -24,15 +22,15 @@ final class Requester {
 
 	private const TIMEOUT = 60;
 
-	/** @var SettingsDTO 設定 */
-	public SettingsDTO $settings;
+	/** @var RedirectSettingsDTO 設定 */
+	public RedirectSettingsDTO $settings;
 
 	/** Constructor */
 	public function __construct(
 		private readonly AbstractPaymentGateway $gateway,
 		private readonly \WC_Order $order
 	) {
-		$this->settings = new SettingsDTO();
+		$this->settings = new RedirectSettingsDTO();
 	}
 
 	/**
@@ -66,7 +64,7 @@ final class Requester {
 		$response_body = \json_decode( \wp_remote_retrieve_body( $response ), true );
 		// LOG 記錄
 		$this->gateway->logger(
-				"{$this->gateway->payment_label} {$endpoint} 請求參數 #{$this->order->get_id()}",
+				"{$this->gateway->title} {$endpoint} 請求參數 #{$this->order->get_id()}",
 				'debug',
 				[
 					'api_url'        => $api_url,
@@ -77,7 +75,7 @@ final class Requester {
 
 		if ( isset( $response_body['code'] ) ) {
 			$this->gateway->logger(
-				"❌ {$this->gateway->payment_label} {$endpoint} 交易失敗 #{$this->order->get_id()}",
+				"❌ {$this->gateway->title} {$endpoint} 交易失敗 #{$this->order->get_id()}",
 				'error',
 				$response_body
 				);
@@ -85,7 +83,7 @@ final class Requester {
 		}
 
 		$this->gateway->logger(
-				"✅ {$this->gateway->payment_label} 發送 {$endpoint} 請求成功 #{$this->order->get_id()}",
+				"✅ {$this->gateway->title} 發送 {$endpoint} 請求成功 #{$this->order->get_id()}",
 				'info',
 				$response_body
 				);

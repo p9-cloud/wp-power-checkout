@@ -8,7 +8,7 @@ namespace J7\PowerCheckout\Domains\Payment\Shared\Abstracts;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\GatewaySupport;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
-use J7\PowerCheckout\Domains\Settings\DTOs\FormFieldDTO;
+use J7\WpUtils\Classes\DTO;
 use J7\WpUtils\Classes\WP;
 
 /**
@@ -18,47 +18,18 @@ use J7\WpUtils\Classes\WP;
  * */
 abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 
-	/** @var string 付款方式類型 (自訂，用來區分付款方式類型) */
+	// region 自訂屬性
+
+	/** @var string 付款方式類型 (自訂，用來區分付款方式類型) @deprecated */
 	public string $payment_type = '';
 
-	/** @var string 付款方式標題  (自訂，用來顯示) */
-	public string $payment_label;
-
-	/** @var string 付款方式 ID */
-	public $id;
-
-	/** @var string 付款方式 icon */
-	public $icon = '';
-
-	/** @var bool 是否再結帳頁顯示自訂欄位 */
-	public $has_fields = false;
-
-	/** @var string 後台顯示付款方式標題 */
-	public $method_title;
-
-	/** @var string 後台顯示付款方式描述 */
-	public $method_description = '';
-
-	/** @var array<string, array<string, mixed>> 付款方式表單欄位 */
-	public $form_fields = [];
-
-	/** @var string 前台顯示付款方式標題 */
-	public $title;
-
-	/** @var string 前台顯示付款方式描述 */
-	public $description = '';
-
-	/** @var string 前台顯示付款方式按鈕文字 */
-	public $order_button_text;
-
-	/** @var int 付款截止日(天)，通常 ATM / CVS / BARCODE 才有 */
-	public int $expire_date = 3;
+	/** @var int 付款截止日(分鐘)，通常 ATM / CVS / BARCODE 才有 */
+	public int $expire_min;
 
 	/** @var int 付款方式最小金額 */
 	public int $min_amount = 0;
 
-	/** @var int 付款方式最大金額 */
-	public $max_amount;
+	// endregion
 
 	/** @var array<GatewaySupport::value> 支援的特性預設支援退款、tokenization、區塊結帳 */
 	public $supports = [ 'products', 'refunds', 'tokenization', 'checkout-blocks' ];
@@ -72,83 +43,34 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	/** @var array<string> 必須設定的屬性 */
 	private array $require_properties = [
 		'id',
-		'icon',
-		'payment_label',
+		'title',
 	];
 
 	/** Constructor */
 	public function __construct() {
-		$this->error             = new \WP_Error();
-		$this->title             = $this->payment_label;
-		$this->method_title      = $this->payment_label;
-		$this->order_button_text = \sprintf( \__( '使用 %s 付款', 'power_checkout' ), $this->payment_label );
+		$settings    = $this->get_settings();
+		$this->error = new \WP_Error();
 
-		$default_form_fields = [
-			'enabled'     => [
-				'title'   => \__( 'Enable/Disable', 'woocommerce' ),
-				/* translators: %s: Gateway method title */
-				'label'   => \sprintf( \__( 'Enable %s', 'power_checkout' ), $this->method_title ),
-				'type'    => 'checkbox',
-				'default' => 'no',
-			],
-			'title'       => [
-				'title'       => \__( 'Title', 'woocommerce' ),
-				'type'        => 'text',
-				'default'     => $this->title,
-				'description' => \__( 'This controls the title which the user sees during checkout.', 'woocommerce' ),
-				'desc_tip'    => true,
-			],
-			'description' => [
-				'title'       => \__( 'Description', 'woocommerce' ),
-				'type'        => 'text',
-				'default'     => $this->order_button_text,
-				'desc_tip'    => true,
-				'description' => \__(
-					'This controls the description which the user sees during checkout.',
-					'woocommerce'
-				),
-			],
-			'min_amount'  => [
-				'title'             => \__( 'Minimum order amount', 'power_checkout' ),
-				'type'              => 'decimal',
-				'default'           => 5,
-				'custom_attributes' => [
-					'min'  => 5,
-					'step' => 1,
-				],
-			],
-			'max_amount'  => [
-				'title'             => \__( 'Maximum order amount', 'power_checkout' ),
-				'type'              => 'decimal',
-				'default'           => 0,
-				'custom_attributes' => [
-					'min'  => 0,
-					'step' => 1,
-				],
-			],
-			'expire_date' => [
-				'title'             => \__( 'Payment deadline', 'power_checkout' ),
-				'type'              => 'decimal',
-				'default'           => 3,
-				'placeholder'       => 3,
-				'description'       => \__( 'ATM allowable payment deadline from 1 day to 60 days.', 'power_checkout' ),
-				'custom_attributes' => [
-					'min'  => 1,
-					'max'  => 60,
-					'step' => 1,
-				],
-			],
-		];
-
-		// phpstan-ignore-next-line
-		$this->form_fields = $this->filter_fields( $default_form_fields );
-		FormFieldDTO::parse_array( $this->form_fields );
 		$this->init_settings();
-		$this->title       = $this->get_option( 'title' ) ?: $this->payment_label;
-		$this->description = $this->get_option( 'description' );
-		$this->expire_date = (int) $this->get_option( 'expire_date', 3 ); // 預設為3天
-		$this->min_amount  = (int) $this->get_option( 'min_amount', 0 );
-		$this->max_amount  = (int) $this->get_option( 'max_amount', 0 );
+		$this->icon              = $settings->icon;
+		$this->title             = $settings->title;
+		$this->description       = $settings->description;
+		$this->order_button_text = $settings->order_button_text ?: \sprintf(
+			\__( '使用 %s 付款', 'power_checkout' ),
+			$this->title
+		);
+
+		if (isset($settings->expire_min)) {
+			$this->expire_min = $settings->expire_min;
+		}
+
+		if (isset($settings->min_amount)) {
+			$this->min_amount = $settings->min_amount;
+		}
+
+		if (isset($settings->max_amount)) {
+			$this->max_amount = $settings->max_amount;
+		}
 
 		// 儲存欄位
 		\add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, [ $this, 'process_admin_options' ] );
@@ -161,19 +83,14 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 
 		$this->validate_properties();
 
+		// 註冊 power checkout 的 payment gateway
+		\add_filter( 'power_checkout_payment_gateway_ids', fn( array $gateway_ids ) => [ ...$gateway_ids, $this->id ] );
+
 		\add_action( 'shutdown', [ $this, 'print_error' ] );
 	}
 
-	/**
-	 * 過濾預設的表單欄位
-	 *
-	 * @param array<string, mixed> $fields 表單欄位
-	 *
-	 * @return array<string, mixed> 過濾後的表單欄位
-	 * */
-	public function filter_fields( array $fields ): array {
-		return $fields;
-	}
+	/** @return DTO 取得 gateway 設定 */
+	abstract public function get_settings(): DTO;
 
 	/**
 	 * 驗證必須設定的屬性
@@ -254,9 +171,9 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 			\wc_release_stock_for_order( $order );
 			return ProcessResult::SUCCESS->to_array( $redirect );
 		} catch (\Throwable $e) {
-			$this->logger( "❌ {$this->payment_label} 處理結帳時發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
+			$this->logger( "❌ {$this->title} 處理結帳時發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
 			// 避免將錯誤資訊 print 到前端
-			\wc_add_notice( "處理結帳時發生錯誤，請查閱 {$this->payment_label} 的 log 紀錄了解詳情", 'error' );
+			\wc_add_notice( "處理結帳時發生錯誤，請查閱 {$this->title} 的 log 紀錄了解詳情", 'error' );
 			return ProcessResult::FAILED->to_array();
 		}
 	}
@@ -284,6 +201,19 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	 * @see          WC_Payment_Gateway::process_refund
 	 */
 	public function process_refund( $order_id, $amount = null, $reason = '' ) {
+
+		// TEST ----- ▼ 印出 WC Logger 記得移除 ----- //
+		\J7\WpUtils\Classes\WC::logger(
+			'process_refund',
+			'info',
+			[
+				'order_id' => $order_id,
+				'amount'   => $amount,
+				'reason'   => $reason,
+			]
+			);
+		// TEST ---------- END ---------- //
+
 		return false;
 	}
 

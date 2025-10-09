@@ -6,7 +6,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs;
 
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Utils\Helper;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 
 /**
  * Shopline Payment 跳轉式支付 Request Header
@@ -50,7 +50,7 @@ final class RequestHeader extends DTO {
 	 * @return self 取得實例
 	 */
 	public static function create( \WC_Order $order ): self {
-		$settings     = new SettingsDTO();
+		$settings     = new RedirectSettingsDTO();
 		$milliseconds = (int) ( new \DateTimeImmutable() )->format( 'Uv' ); // 13位
 		$request_id   = $order->get_id() . '-' . \wp_unique_id() . '-' . $milliseconds;
 		$args         = [

@@ -19,7 +19,7 @@ final class CVS extends PaymentGateway {
 
 	/** Constructor */
 	public function __construct() {
-		$this->payment_label = __( 'ECPayAIO CVS', 'power_checkout' );
+		$this->title = __( 'ECPayAIO CVS', 'power_checkout' );
 		parent::__construct();
 	}
 

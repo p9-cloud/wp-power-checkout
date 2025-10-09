@@ -18,15 +18,15 @@ interface IFormData {
 
 
 const route = useRoute()
-const settingKey = route.params.id
+const gatewayId = route.params.id
 
 const {isPending, data} = useQuery({
-  queryKey: ['integration_settings', settingKey,],
+  queryKey: ['gateway_settings', gatewayId,],
   queryFn: async () => await apiClient.get<{
     code: string,
     message: string,
     data: IFormData
-  }>(`settings/${settingKey}`),
+  }>(`gateways/${gatewayId}/settings`),
   select: (res) => res.data?.data,
 })
 
@@ -80,10 +80,10 @@ const queryClient = useQueryClient()
 
 // 定義 mutation
 const {mutate: save, isPending: isSavePending} = useMutation({
-  mutationFn: async (payload: IFormData) => await apiClient.post(`/settings/${settingKey}`, payload),
+  mutationFn: async (payload: IFormData) => await apiClient.post(`/gateways/${gatewayId}/settings`, payload),
   onSuccess: () => {
     // 成功後可刷新相關快取
-    queryClient.invalidateQueries({queryKey: ['integration_settings', settingKey,]})
+    queryClient.invalidateQueries({queryKey: ['gateway_settings', gatewayId,]})
   },
   onError: (err) => {
     console.error('更新失敗', err)

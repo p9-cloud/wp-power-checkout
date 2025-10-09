@@ -19,7 +19,7 @@ final class Atm extends PaymentGateway {
 
 	/** Constructor */
 	public function __construct() {
-		$this->payment_label = __( 'ECPayAIO ATM', 'power_checkout' );
+		$this->title = __( 'ECPayAIO ATM', 'power_checkout' );
 		parent::__construct();
 	}
 

@@ -6,7 +6,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\SettingsDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
 use J7\WpUtils\Classes\DTO;
 
@@ -73,7 +73,7 @@ final class RequestParamsCreate extends DTO {
 	 *  @param \WC_Order              $order 訂單
 	 */
 	public static function create( AbstractPaymentGateway $gateway, \WC_Order $order, ): self {
-		$settings = new SettingsDTO();
+		$settings = new RedirectSettingsDTO();
 		$total    = $order->get_total();
 		$args     = [
 			'referenceId'            => $order->get_id(),
