@@ -7,6 +7,9 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session;
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\LanguageTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceIdTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
 use J7\WpUtils\Classes\DTO;
 
@@ -16,15 +19,9 @@ use J7\WpUtils\Classes\DTO;
  * @see https://docs.shoplinepayments.com/api/trade/session/
  */
 final class CreateSessionDTO extends DTO {
-
-	/** @var string *特店訂單號 (32) */
-	public string $referenceId;
-
-	/** @var Components\Amount *金額 */
-	public Components\Amount $amount;
-
-	/** @var 'en' | 'zh-TW' 語言 (6) */
-	public string $language;
+	use ReferenceIdTrait;
+	use LanguageTrait;
+	use AmountTrait;
 
 	/** @var int 設定結帳交易的逾時時間，若不設定則默认為 360, 單位：min */
 	public string $expireTime;
@@ -96,7 +93,7 @@ final class CreateSessionDTO extends DTO {
 	 *
 	 * @throws \Exception 如果驗證失敗
 	 *  */
-	public function validate(): void {
+	protected function validate(): void {
 		parent::validate();
 		foreach ( $this->allowPaymentMethodList as $payment_method ) {
 			PaymentMethod::from( $payment_method );

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderIdTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
@@ -15,13 +16,11 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
  *  */
 final class Order extends DTO {
 	use ReferenceOrderIdTrait;
+    use AmountTrait;
 
 	/** @var string *特店 ID (32)*/
 	public string $merchantId;
-
-	/** @var Components\Amount *訂單金額*/
-	public Components\Amount $amount;
-
+ 
 	/** @var int *訂單建立時間*/
 	public int $createTime;
 

@@ -37,7 +37,7 @@ final class CreditCard extends DTO {
 	protected $required_properties = [ 'type', 'bin', 'last4' ];
 
 	/** 自訂驗證 */
-	public function validate(): void {
+    protected function validate(): void {
 		parent::validate();
 		if (isset( $this->type)) {
 			Enums\CreditCardType::from( $this->type );

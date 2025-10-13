@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Order;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Utils\Helper;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Amount;
@@ -13,6 +14,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Amount;
  * 請求會帶
  *  */
 final class Product extends DTO {
+    use AmountTrait;
 
 	/** @var string (64) *商品編號 */
 	public string $id;
@@ -22,10 +24,7 @@ final class Product extends DTO {
 
 	/** @var int *商品數量 */
 	public int $quantity;
-
-	/** @var Amount *商品金額 */
-	public Amount $amount;
-
+ 
 	/** @var string (512) 商品描述 */
 	public string $desc;
 

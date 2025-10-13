@@ -51,7 +51,7 @@ final class Body extends DTO {
 	}
 
 	/** 自訂驗證邏輯 */
-	public function validate(): void {
+    protected function validate(): void {
 		parent::validate();
 		if (isset( $this->type)) {
 			EventType::from($this->type);

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\RefundMsgTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\RefundOrderIdTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
 use J7\WpUtils\Classes\DTO;
@@ -18,16 +21,11 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 final class Refund extends DTO {
 	use ReferenceOrderIdTrait;
 	use TradeOrderIdTrait;
+	use AmountTrait;
 	use StatusTrait;
+	use RefundOrderIdTrait;
+	use RefundMsgTrait;
 
-	/** @var string *SLP 退款訂單號 (32)*/
-	public string $refundOrderId;
-
-	/** @var Components\Amount *訂單金額*/
-	public Components\Amount $amount;
-
-	/** @var Components\PaymentError|null 退款失敗原因 選填 */
-	public Components\PaymentError|null $refundMsg;
 
 	/** @var string|null 第三方平台流水號，街口支付和 LINE Pay 特店對帳使用 選填 */
 	public string|null $channelDealId;

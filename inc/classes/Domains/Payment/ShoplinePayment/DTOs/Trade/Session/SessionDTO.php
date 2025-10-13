@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session;
 
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\SessionIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\SessionUrlTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
@@ -15,22 +19,14 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
  * @see https://docs.shoplinepayments.com/api/trade/session/
  */
 final class SessionDTO extends DTO {
+	use ReferenceIdTrait;
+	use SessionIdTrait;
 	use StatusTrait;
-
-	/** @var string *SLP 結帳交易訂單編號 (32) */
-	public string $sessionId;
-
-	/** @var string *特店訂單號 (32) */
-	public string $referenceId;
-
-	/** @var string *結帳交易提供給顧客付款的 URL (256) */
-	public string $sessionUrl;
+	use AmountTrait;
+	use SessionUrlTrait;
 
 	/** @var int *訂單建立時間 timestamp 13位毫秒 */
 	public int $createTime;
-
-	/** @var Components\Amount *商品金額 */
-	public Components\Amount $amount;
 
 	/** @var Components\PaymentDetail[]|null 付款方式詳細資訊 */
 	public array|null $paymentDetails;
@@ -65,7 +61,7 @@ final class SessionDTO extends DTO {
 	 *
 	 * @throws \Exception 如果驗證失敗
 	 *  */
-	public function validate(): void {
+	protected function validate(): void {
 		parent::validate();
 		if (isset( $this->status)) {
 			Enums\ResponseStatus::from( $this->status );

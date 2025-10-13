@@ -84,7 +84,7 @@ final class Payment extends DTO {
 	}
 
 	/** 自訂驗證 */
-	public function validate(): void {
+    protected function validate(): void {
 		parent::validate();
 		if (isset( $this->paymentMethod)) {
 			Enums\PaymentMethod::from( $this->paymentMethod );

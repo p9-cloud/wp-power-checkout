@@ -134,7 +134,7 @@ final class RedirectSettingsDTO extends DTO implements IGatewaySettings {
 	 *
 	 * @noinspection PhpExpressionResultUnusedInspection
 	 */
-	public function validate(): void {
+	protected function validate(): void {
 		parent::validate();
 		if (isset( $this->mode)) {
 			Enums\Mode::from( $this->mode );

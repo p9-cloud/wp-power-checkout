@@ -49,7 +49,7 @@ final class PaymentInstrument extends DTO {
 	 *
 	 * @throws \Exception 如果驗證失敗
 	 */
-	public function validate(): void {
+    protected function validate(): void {
 		if ( isset( $this->instrumentType ) && Enums\PaymentMethod::CREDITCARD->value !== $this->instrumentType ) {
 			throw new \Exception( '付款工具類型不合法' );
 		}
