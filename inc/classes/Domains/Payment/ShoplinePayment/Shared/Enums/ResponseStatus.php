@@ -28,7 +28,7 @@ enum ResponseStatus: string {
 	/** @return string 取得狀態的標籤 */
 	public function label(): string {
 		return match ( $this ) {
-			self::CREATED => '建立',
+			self::CREATED => '任務已創建，處理中...',
 			self::CUSTOMER_ACTION => '顧客處理中',
 			self::PROCESSING => '內部處理中',
 			self::PENDING => '處理中',

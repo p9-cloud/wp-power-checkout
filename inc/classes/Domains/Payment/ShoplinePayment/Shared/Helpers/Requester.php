@@ -7,6 +7,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Helpers;
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RequestHeader;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ErrorCode;
 
 
 /**
@@ -31,6 +32,9 @@ final class Requester {
 		private readonly \WC_Order $order
 	) {
 		$this->settings = new RedirectSettingsDTO();
+		if (!$this->gateway->order) {
+			$this->gateway->order = $this->order;
+		}
 	}
 
 	/**
@@ -74,12 +78,17 @@ final class Requester {
 				);
 
 		if ( isset( $response_body['code'] ) ) {
+			$error = ErrorCode::tryFrom($response_body['code'] );
 			$this->gateway->logger(
-				"❌ {$this->gateway->title} {$endpoint} 交易失敗 #{$this->order->get_id()}",
+				"❌ {$this->gateway->title} {$endpoint} 請求失敗 #{$this->order->get_id()}",
 				'error',
-				$response_body
+				$error ? [
+					'code' => $error->value,
+					'msg'  => $error->label(),
+				] : $response_body
 				);
-			throw new \Exception( (string) $response_body['msg'], (int) $response_body['code'] );
+
+			throw new \Exception( (string) ( $error ? $error->label() : $response_body['msg'] ), (int) ( $error ? $error->value : $response_body['code'] ) );
 		}
 
 		$this->gateway->logger(

@@ -4,11 +4,11 @@ declare ( strict_types = 1 );
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http;
 
+use J7\PowerCheckout\Domains\Payment\Shared\Params;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Session;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\EventTypeManager;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\EventType;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\PowerCheckout\Plugin;
 use J7\WpUtils\Classes\ApiBase;
 
@@ -55,13 +55,19 @@ final class WebHook extends ApiBase {
 	 * @return \WP_REST_Response 回應
 	 */
 	public function post_webhook_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		return new \WP_REST_Response( null, 200 );
 		$is_valid    = $this->is_valid( $request );
 		$body_params = $request->get_params();
 
 		try {
 			$webhook_dto = Body::create( $body_params );
-			EventTypeManager::update_order_status($webhook_dto);
+
+			\J7\WpUtils\Classes\WC::logger( "webhook type: {$webhook_dto->type} id: {$webhook_dto->id}", 'debug', $body_params, 'power_checkout_' . RedirectGateway::ID, 0 );
+
+			$webhook_data_dto = $webhook_dto->data;
+			// 處理退款
+			if ($webhook_data_dto instanceof Webhooks\Refund) {
+				$this->handle_refund($webhook_data_dto);
+			}
 
 			// 收到通知就始終回 200 ，不用讓 SLP 重試
 			return new \WP_REST_Response( null, 200 );
@@ -79,6 +85,10 @@ final class WebHook extends ApiBase {
 			return new \WP_REST_Response( null, 200 );
 		}
 	}
+
+	// region 驗證有效性
+
+
 
 	/**
 	 * 驗證簽章
@@ -148,5 +158,26 @@ final class WebHook extends ApiBase {
 		$payload  = mb_convert_encoding( $payload, 'UTF-8', 'auto' );
 		$sign_key = ( new RedirectSettingsDTO() )->signKey;
 		return hash_hmac( 'sha256', $payload, $sign_key );
+	}
+
+	// endregion
+
+
+	/** @return string 取得 webhook url */
+	public static function get_webhook_url(): string {
+		return \get_rest_url(null, 'power-checkout/slp/webhook');
+	}
+
+	/** 處理退款資訊 */
+	private function handle_refund( Webhooks\Refund $refund_dto ): void {
+		$order = Params::get_order_by_identity_payment_key($refund_dto->tradeOrderId );
+		if (!$order) {
+			throw new \Exception("找不到訂單，tradeOrderId: {$refund_dto->tradeOrderId}");
+		}
+
+		$result = RedirectGateway::handle_refund_response($refund_dto, $order);
+		if (\is_wp_error($result)) {
+			throw new \Exception($result->get_error_message());
+		}
 	}
 }

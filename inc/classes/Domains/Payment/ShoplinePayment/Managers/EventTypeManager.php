@@ -6,7 +6,6 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Payment;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Session;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\EventType;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
@@ -23,6 +22,12 @@ final class EventTypeManager {
 	public function __construct( private EventType $event_type ) {
 	}
 
+	/** @return EventTypeManager  */
+	public static function from( Body $webhook_dto ): self {
+		$event_type = $webhook_dto->get_event_type();
+		return new self($event_type);
+	}
+
 
 	/**
 	 * 依照事件類型不同的轉換不同的訂單狀態
@@ -36,6 +41,7 @@ final class EventTypeManager {
 	 * @return void
 	 * @ref https://docs.shoplinepayments.com/api/event/model/
 	 * 只需處理 Session 的 webhook，因為只有 Session 有帶 referenceId (對應 order_id)
+	 * @deprecated 付款成功的狀態變更用 get_payment 同步取得，而非等 webhook
 	 */
 	public static function update_order_status( Body $webhook_dto ): void {
 		$event_type = $webhook_dto->get_event_type();

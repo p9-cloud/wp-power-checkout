@@ -19,6 +19,9 @@ class Params {
 	/** @var string 紀錄付款詳情 */
 	private const PAYMENT_DETAIL_KEY = 'pc_payment_detail';
 
+	/** @var string 紀錄退款詳情 */
+	private const REFUND_DETAIL_KEY = 'pc_refund_detail';
+
 	/** Construct */
 	public function __construct(
 		private readonly \WC_Order $_order,
@@ -69,6 +72,26 @@ class Params {
 
 
 	/**
+	 * 用 identity_payment_value 取得 Order
+	 *
+	 * @param string $identity_payment_value identity_payment_key 的值
+	 *
+	 * @return \WC_Order|null
+	 */
+	public static function get_order_by_identity_payment_key( string $identity_payment_value ): \WC_Order|null {
+		$args = [
+			'limit'      => 1,
+			'meta_key'   => self::IDENTITY_PAYMENT_KEY, // phpcs:ignore
+			'meta_value' => $identity_payment_value,// phpcs:ignore
+		];
+
+		$orders = \wc_get_orders($args);
+		$order  = \reset($orders);
+		return ( $order instanceof \WC_Order ) ? $order : null;
+	}
+
+
+	/**
 	 * 取得付款詳情 array
 	 *
 	 * @return array<string, mixed>
@@ -86,6 +109,28 @@ class Params {
 	 */
 	public function update_payment_detail( array $value ): void {
 		$this->_order->update_meta_data( self::PAYMENT_DETAIL_KEY, $value );
+		$this->_order->save_meta_data();
+	}
+
+
+	/**
+	 * 取得退款詳情 array
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_refund_detail(): array {
+		$refund_detail_array = $this->_order->get_meta( self::REFUND_DETAIL_KEY ) ?: [];
+		return \is_array($refund_detail_array) ? $refund_detail_array : [];
+	}
+
+	/**
+	 * 儲存退款詳情 array
+	 *
+	 * @param array<string, mixed> $value 付款詳情 array
+	 * @return void
+	 */
+	public function update_refund_detail( array $value ): void {
+		$this->_order->update_meta_data( self::REFUND_DETAIL_KEY, $value );
 		$this->_order->save_meta_data();
 	}
 }

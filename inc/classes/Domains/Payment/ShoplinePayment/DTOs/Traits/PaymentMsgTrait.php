@@ -6,5 +6,5 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\ErrorMessag
 
 trait PaymentMsgTrait {
 	/** @var ErrorMessage|null 支付錯誤訊息 (ErrorMessage) 選填 */
-	public ErrorMessage|null $paymentMsg;
+	public ErrorMessage|null $paymentMsg = null;
 }

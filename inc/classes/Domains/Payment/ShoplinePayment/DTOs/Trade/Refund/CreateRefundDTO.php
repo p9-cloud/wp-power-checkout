@@ -10,6 +10,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AdditionalDataT
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderIdTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
 use J7\PowerCheckout\Utils\Helper;
 use J7\WpUtils\Classes\DTO;
 
@@ -42,18 +43,22 @@ class CreateRefundDTO extends DTO {
 	 * @throws \Exception DTO 錯誤
 	 */
 	public static function create( \WC_Order $order, float $amount, string $reason = '' ): self {
-		$payment_dto = PaymentDTO::from_order($order);
+		try {
+			$payment_dto = PaymentDTO::from_order($order);
 
-		$args = [
-			'referenceOrderId' => $payment_dto->referenceOrderId,
-			'tradeOrderId'     => $payment_dto->tradeOrderId,
-			'amount'           => Amount::create($amount),
-			'reason'           => $reason ?? static::get_default_reason($amount),
-		// 'callbackUrl' => '',
-		// 'additionalData' => ''
-		];
+			$args = [
+				'referenceOrderId' => $payment_dto->referenceOrderId,
+				'tradeOrderId'     => $payment_dto->tradeOrderId,
+				'amount'           => Amount::create($amount),
+				'reason'           => $reason ?: static::get_default_reason($amount),
+				'callbackUrl'      => WebHook::get_webhook_url(),
+			// 'additionalData' => ''
+			];
 
-		return new self($args);
+			return new self($args);
+		} catch (\Throwable $e) {
+			throw new \Exception("退款失敗，找不到訂單 #{$order->get_id()} 相關的付款詳情資料");
+		}
 	}
 
 	/** @return string 取得預設的 reason */

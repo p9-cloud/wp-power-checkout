@@ -230,11 +230,14 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 		}
 
 		$payment_detail_array = ( new Params($order) )->get_payment_detail();
-		if (!$payment_detail_array) {
-			return;
+		if ($payment_detail_array) {
+			echo WP::array_to_html( $payment_detail_array);
 		}
 
-		echo WP::array_to_html( $payment_detail_array);
+		$refund_detail_array = ( new Params($order) )->get_refund_detail();
+		if ($refund_detail_array) {
+			echo WP::array_to_html( $refund_detail_array);
+		}
 	}
 
 	/**
@@ -311,18 +314,17 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	 * @param string               $level       等級 info | error | alert | critical | debug | emergency | warning | notice
 	 * @param array<string, mixed> $args        附加資訊
 	 * @param int                  $trace_limit 追蹤堆疊層數
-	 * @param bool|null            $order_note 是否紀錄在 order note
+	 * @param bool|null            $allow_order_note 是否紀錄在 order note
 	 */
-	final public function logger( string $message, string $level = 'debug', array $args = [], $trace_limit = 0, bool|null $order_note = null ): void {
+	final public function logger( string $message, string $level = 'debug', array $args = [], $trace_limit = 0, bool|null $allow_order_note = null ): void {
 		\J7\WpUtils\Classes\WC::logger( $message, $level, $args, "power_checkout_{$this->id}", $trace_limit );
 		if (!$this->order) {
 			return;
 		}
 
-		$order_note = $order_note ?? \in_array( $level, [ 'error', 'warning' ], true );
-
-		if ( $order_note ) {
-			$order_note = WP::array_to_html( $args, [ 'title' => $message ] );
+		$allow_order_note = $allow_order_note ?? \in_array( $level, [ 'error', 'warning' ], true );
+		if ( $allow_order_note ) {
+			$order_note = WP::array_to_html( $args, [ 'title' => "{$message} <p>&nbsp;</p>" ] );
 			$this->order->add_order_note( $order_note );
 		}
 	}

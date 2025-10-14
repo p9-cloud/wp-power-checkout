@@ -13,6 +13,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTra
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
 use J7\WpUtils\Classes\DTO;
+use J7\WpUtils\Classes\WP;
 
 class RefundDTO extends DTO {
 	use RefundOrderIdTrait;
@@ -22,6 +23,7 @@ class RefundDTO extends DTO {
 	use StatusTrait;
 	use RefundMsgTrait;
 
+	/** @var array 必填屬性 */
 	protected array $require_properties = [
 		'refundOrderId',
 		'referenceOrderId',
@@ -62,5 +64,25 @@ class RefundDTO extends DTO {
 				'tradeOrderId'     => $this->tradeOrderId,
 			]
 		);
+	}
+
+	/** @return string 人類可讀文字 */
+	public function to_human_html(): string {
+		$title  = $this->to_human_title();
+		$title .= '<p>&nbsp;</p>';
+
+		return WP::array_to_html($this->to_human_array(), [ 'title' => $title ] );
+	}
+
+	/** @return string 人類可讀文字 */
+	public function to_human_title(): string {
+		$status = ResponseStatus::from( $this->status );
+		$title  = "{$status->emoji()} 退款{$status->label()}";
+		if ($this->refundMsg?->code) {
+			$msg_array = $this->refundMsg->to_human_array();
+			$msg       = \reset( $msg_array);
+			$title    .= ": {$msg}";
+		}
+		return $title;
 	}
 }

@@ -34,6 +34,9 @@ final class ApiClient {
 		private readonly \WC_Order $order
 	) {
 		$this->requester = new Requester( $this->gateway, $this->order );
+		if (!$this->gateway->order) {
+			$this->gateway->order = $this->order;
+		}
 	}
 
 	/**
@@ -44,7 +47,7 @@ final class ApiClient {
 	 * @throws \Exception 如果交易建立失敗
 	 *  */
 	public function create_session(): SessionDTO {
-        $return_url = $this->gateway->get_return_url( $this->order );
+		$return_url    = $this->gateway->get_return_url( $this->order );
 		$request_body  = CreateSessionDTO::create( $this->order, $return_url )->to_array();
 		$response_body = $this->requester->post( '/trade/sessions/create', $request_body );
 		return SessionDTO::create( $response_body );

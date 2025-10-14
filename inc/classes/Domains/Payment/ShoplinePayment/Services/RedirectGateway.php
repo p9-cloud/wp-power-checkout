@@ -11,6 +11,7 @@ use J7\PowerCheckout\Domains\Payment\Shared\Params;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\PaymentDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Refund\RefundDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Refund as WebhooksRefundDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\StatusManager;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
@@ -165,22 +166,32 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 		}
 
 		$payment_detail_array = ( new Params( $order) )->get_payment_detail();
-		if ( !$payment_detail_array ) {
-			return;
-		}
-		try {
-			$html = PaymentDTO::create( $payment_detail_array)->to_human_html();
-		} catch (\Throwable $e) {
-			$html = WP::array_to_html( $payment_detail_array );
+		if ( $payment_detail_array ) {
+			try {
+				echo PaymentDTO::create( $payment_detail_array)->to_human_html();
+			} catch (\Throwable $e) {
+				echo WP::array_to_html( $payment_detail_array );
+			}
 		}
 
-		echo $html;
+		$refund_detail_array = ( new Params($order) )->get_refund_detail();
+		if ($refund_detail_array) {
+			try {
+				echo WebhooksRefundDTO::create( $refund_detail_array)->to_human_html();
+			} catch (\Throwable $e) {
+				echo WP::array_to_html( $refund_detail_array );
+			}
+		}
 	}
+
+	// region 取得設定
 
 	/** @return IGatewaySettings 取得 gateway 設定 */
 	public function get_settings(): DTO {
 		return RedirectSettingsDTO::instance();
 	}
+
+	// endregion
 
 	// region 退款
 
@@ -202,7 +213,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 			return false;
 		}
 		$response_dto = ( new ApiClient( $this, $order ) )->create_refund( (float) $amount, $reason );
-		return $this->handle_refund_response( $response_dto, $order);
+		return self::handle_refund_response( $response_dto, $order);
 	}
 
 	/**
@@ -212,23 +223,32 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	 * @param \WC_Order $order        WooCommerce 訂單物件
 	 * @return bool|\WP_Error         成功回傳 true，失敗回傳 WP_Error
 	 */
-	private function handle_refund_response( RefundDTO $response_dto, \WC_Order $order ): bool|\WP_Error {
-		$status = ResponseStatus::from( $response_dto->status );
-		$title  = "{$status->emoji()} 訂單 #{$order->get_id()} 退款{$status->label()}";
-		if (isset($response_dto->refundMsg)) {
-			$msg_array = $response_dto->refundMsg->to_human_array();
-			$msg       = \reset( $msg_array);
-			$title    .= ": {$msg}";
-		}
-
-		$html = WP::array_to_html($response_dto->to_human_array(), [ 'title' => $title ] );
+	public static function handle_refund_response( RefundDTO $response_dto, \WC_Order $order ): bool|\WP_Error {
+		$html = $response_dto->to_human_html();
 		$order->add_order_note( $html );
 
-		if (isset($response_dto->refundMsg)) {
-			return new \WP_Error( 'refund_failed', $title, $response_dto->to_array() );
+		// TEST ----- ▼ 印出 WC Logger 記得移除 ----- //
+		\J7\WpUtils\Classes\WC::logger(
+			'response_dto: ' . $response_dto::class,
+			'info',
+			[
+				'update_refund_detail' => $response_dto instanceof WebhooksRefundDTO ? 'true' : 'false',
+				'code'                 => $response_dto->refundMsg?->code,
+				'bool_code'            => ( (bool) $response_dto->refundMsg?->code ) ? 'true' : 'false',
+				'refundMsg'            => $response_dto->refundMsg?->to_array(),
+			]
+			);
+		// TEST ---------- END ---------- //
+
+		if ($response_dto instanceof WebhooksRefundDTO) {
+			( new Params($order) )->update_refund_detail($response_dto->to_array() );
 		}
 
-		return $status === ResponseStatus::SUCCEEDED;
+		if ($response_dto->refundMsg?->code) {
+			return new \WP_Error( 'refund_failed', $response_dto->to_human_title(), $response_dto->to_array() );
+		}
+
+		return true; // 沒有失敗的話，就是成功
 	}
 
 	// endregion
