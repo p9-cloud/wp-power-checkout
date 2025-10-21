@@ -18,6 +18,9 @@ class SettingTabService {
 	/** @var array{0:string, 1:string} 設定分頁 [value, label] */
 	private static array $tab;
 
+	/** @var string js,css handle */
+	public static string $handle = 'power-checkout-wc-setting-tab';
+
 	/**
 	 * 取得存在 DB 中的 資料
 	 *
@@ -45,7 +48,7 @@ class SettingTabService {
 
 		\add_action( 'woocommerce_settings_tabs_array', [ __CLASS__, 'add_settings_tab' ], 30);
 		\add_action( 'admin_head', [ __CLASS__, 'hide_default_element' ]);
-		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
+		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ], 0 );
 	}
 
 	/**
@@ -91,12 +94,8 @@ class SettingTabService {
 	 * @return void
 	 */
 	public static function enqueue_scripts( $hook ): void { // phpcs:ignore
-        if(!self::is_current_tab()) { // phpcs:ignore
-			return;
-		}
-		$handle = 'power-checkout-wc-setting-tab';
-		\wp_enqueue_script(
-			$handle,
+		\wp_register_script(
+			self::$handle,
 			Plugin::$url . '/js/dist/index.js',
 			[ 'jquery' ],
 			Plugin::$version,
@@ -104,15 +103,14 @@ class SettingTabService {
 				'strategy'  => 'async',
 				'in_footer' => true,
 			]
-			);
+		);
 
-		$obj_name = Plugin::$snake . '_data'; // power_checkout_data
-
+		$obj_name  = Plugin::$snake . '_data'; // power_checkout_data
 		$post_id   = \get_the_ID();
 		$permalink = $post_id ? \get_permalink( $post_id ) : '';
 
 		\wp_localize_script(
-			$handle,
+			self::$handle,
 			$obj_name,
 			[
 				'env' => [
@@ -127,17 +125,28 @@ class SettingTabService {
 					'NONCE'           => \wp_create_nonce( 'wp_rest' ),
 					'APP1_SELECTOR'   => Base::APP1_SELECTOR,
 				],
-
 			]
-			);
-
-		Plugin::instance()->add_module_handle( $handle);
-
-		\wp_enqueue_style(
-			$handle,
-		Plugin::$url . '/js/dist/index.css',
-		[],
-		Plugin::$version,
 		);
+
+		Plugin::instance()->add_module_handle( self::$handle);
+
+		\wp_register_style(
+			self::$handle,
+			Plugin::$url . '/js/dist/index.css',
+			[],
+			Plugin::$version,
+		);
+
+        if(!self::is_current_tab()) { // phpcs:ignore
+			return;
+		}
+
+		self::enqueue_vue_app();
+	}
+
+	/** @return void 載入 Vue App */
+	public static function enqueue_vue_app(): void {
+		\wp_enqueue_script(self::$handle);
+		\wp_enqueue_style(self::$handle);
 	}
 }

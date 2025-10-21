@@ -5,16 +5,20 @@ declare (strict_types = 1);
 namespace J7\PowerCheckout\Domains\Payment;
 
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Refund\CreateRefundDTO;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RegisterGateways;
+use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
+use J7\PowerCheckout\Plugin;
+use J7\PowerCheckout\Shared\Utils\OrderUtils;
 
 /** Loader 載入付款方式 */
 final class Loader {
 	/** Register hooks */
 	public static function register_hooks(): void {
 		ShoplinePayment\Services\RegisterGateways::register_hooks();
+		Shared\Services\PaymentApiService::register_hooks();
 		// EcpayAIO\Core\Init::register_hooks();
 
 		\add_action( 'woocommerce_refund_created', [ __CLASS__, 'default_refund_reason' ], 10, 2 );
+		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'refund_script' ], 20 );
 	}
 
 	/** 修改預設的退款原因 */
@@ -31,5 +35,38 @@ final class Loader {
 
 		$refund->set_reason($new_reason);
 		$refund->save();
+	}
+
+
+	public static function refund_script( $hook ): void {
+		if (!OrderUtils::is_order_detail($hook)) {
+			return;
+		}
+		SettingTabService::enqueue_vue_app();
+
+		$order_id = OrderUtils::get_order_id($hook);
+		$order    = \wc_get_order($order_id);
+		if (!$order instanceof \WC_Order) {
+			return;
+		}
+
+		// 要額外給前端的資料
+		$obj_name = Plugin::$snake . '_order_data'; // power_checkout_order_data
+		\wp_localize_script(
+			SettingTabService::$handle,
+			$obj_name,
+			[
+				'gateway' => [
+					'id'           => $order->get_payment_method(),
+					'method_title' => $order->get_payment_method_title(),
+				],
+				'order'   => [
+					'id'                      => (string) $order->get_id(),
+					'total'                   => \wc_price($order->get_total()),
+					'remaining_refund_amount' => \wc_price($order->get_remaining_refund_amount()),
+				],
+
+			]
+		);
 	}
 }

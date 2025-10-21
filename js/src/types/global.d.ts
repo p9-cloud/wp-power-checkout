@@ -1,6 +1,8 @@
+import {IOrderData} from "@/external/order/types";
+
 export {};
 
-export type TEnv = {
+export interface IEnv {
     SITE_URL: string,
     API_URL: string,
     CURRENT_USER_ID: number,
@@ -16,7 +18,8 @@ export type TEnv = {
 declare global {
     interface Window {
         power_checkout_data: {
-            env: TEnv,
+            env: IEnv,
         }; // 或更精確的型別
+        power_checkout_order_data: IOrderData;
     }
 }

@@ -8,7 +8,6 @@ namespace J7\PowerCheckout\Domains\Payment\Shared\Abstracts;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\GatewaySupport;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
-use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
 use J7\WpUtils\Classes\DTO;
 use J7\WpUtils\Classes\WP;
 
@@ -344,6 +343,8 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	/**
 	 * 退款邏輯，API 發送
 	 * 退款創建時觸發
+	 *
+	 * TODO 之後改為抽像方法
 	 *
 	 * @param int $order_id 訂單 id
 	 * @param int $refund_id 退款 id
