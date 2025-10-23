@@ -19,8 +19,6 @@ final class Bootstrap {
 	/** Constructor */
 	public function __construct() {
 
-		FrontEnd\Entry::instance();
-		Admin\CPT::instance();
 		Domains\Payment\Loader::register_hooks();
 		Domains\Settings\Services\SettingApiService::register_hooks();
 		Domains\Settings\Services\SettingTabService::register_hooks();
