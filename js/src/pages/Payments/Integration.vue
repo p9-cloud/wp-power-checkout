@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import apiClient from '@/api'
 import type { FormRules } from 'element-plus'
+import { merge } from 'lodash-es'
 
 interface IFormData {
 	// --- 一般設定 --- //
@@ -22,6 +23,14 @@ interface IFormData {
 	clientKey: string
 	signKey: string
 	allowPaymentMethodList: string[]
+	paymentMethodOptions: {
+		CreditCard: {
+			installmentCounts: string[]
+		}
+		ChaileaseBNPL: {
+			installmentCounts: string[]
+		}
+	}
 }
 
 const route = useRoute()
@@ -42,7 +51,7 @@ const { isPending, data } = useQuery({
 const formRef = ref()
 
 // 表單資料
-const form = ref<IFormData>({
+const form = reactive<IFormData>({
 	// --- 一般設定 --- //
 	title: '',
 	description: '',
@@ -56,34 +65,34 @@ const form = ref<IFormData>({
 	apiKey: '',
 	clientKey: '',
 	signKey: '',
-	allowPaymentMethodList: [
-		'CreditCard',
-		'VirtualAccount',
-		'JKOPay',
-		'ApplePay',
-		'LinePay',
-		'ChaileaseBNPL',
-	],
+	allowPaymentMethodList: [],
+	paymentMethodOptions: {
+		CreditCard: {
+			installmentCounts: [],
+		},
+		ChaileaseBNPL: {
+			installmentCounts: [],
+		},
+	},
 })
 
 watch(
 	data,
 	(newData) => {
 		if (newData) {
-			form.value = {
-				...newData,
-			} // 將 API 回傳資料輸入表單
+			merge(form, newData) // 深層合併
+			// 將 API 回傳資料輸入表單
 		}
 	},
 	{ immediate: true },
 )
 
-const isTestMode = computed(() => form.value.mode === 'test')
+const isTestMode = computed(() => form.mode === 'test')
 
 const onSubmit = async () => {
 	await formRef.value.validate((valid: boolean) => {
 		if (valid) {
-			save(toRaw(form.value)) // 呼叫 mutation
+			save(toRaw(form)) // 呼叫 mutation
 		}
 	})
 }
@@ -128,6 +137,27 @@ const rules = reactive<FormRules<IFormData>>({
 		},
 	],
 })
+
+const creditCardInstallment = [
+	'0',
+	'3',
+	'6',
+	'9',
+	'12',
+	'18',
+	'24',
+]
+const chaileaseBNPLInstallment = [
+	'0',
+	'3',
+	'6',
+	'12',
+	'18',
+	'24',
+	'30',
+	'36',
+]
+const apiUrl = window.power_checkout_data.env.API_URL
 </script>
 
 <template>
@@ -304,34 +334,60 @@ const rules = reactive<FormRules<IFormData>>({
 		<el-form-item :required="!isTestMode" prop="signKey" label="Sign Key">
 			<el-input v-model="form.signKey" :disabled="isTestMode" clearable />
 			<p class="text-sm text-gray-500">
-				Sign Key 簽名密鑰，需要設定完 WebHook 後，由 Shopline 窗口提供
+				Sign Key 簽名密鑰，需要設定完 WebHook (
+				<code>{{ apiUrl }}/power-checkout/slp/webhook</code> ) 後，由 Shopline
+				窗口提供
 			</p>
 		</el-form-item>
 
 		<el-form-item prop="allowPaymentMethodList" label="允許的付款方式">
 			<el-checkbox-group v-model="form.allowPaymentMethodList">
-				<el-checkbox name="allowPaymentMethodList" value="CreditCard">
-					信用卡
-				</el-checkbox>
-				<el-checkbox name="allowPaymentMethodList" value="VirtualAccount">
-					ATM 虛擬帳號
-				</el-checkbox>
-				<el-checkbox name="allowPaymentMethodList" value="JKOPay">
-					街口支付
-				</el-checkbox>
-				<el-checkbox name="allowPaymentMethodList" value="ApplePay">
-					Apple Pay
-				</el-checkbox>
-				<el-checkbox name="allowPaymentMethodList" value="LinePay">
-					Line Pay
-				</el-checkbox>
-				<el-checkbox name="allowPaymentMethodList" value="ChaileaseBNPL">
-					中租
+				<el-checkbox label="CreditCard"> 信用卡 </el-checkbox>
+				<el-checkbox label="VirtualAccount"> ATM 虛擬帳號 </el-checkbox>
+				<el-checkbox label="JKOPay"> 街口支付 </el-checkbox>
+				<el-checkbox label="ApplePay"> Apple Pay </el-checkbox>
+				<el-checkbox label="LinePay"> Line Pay </el-checkbox>
+				<el-checkbox label="ChaileaseBNPL"> 中租 </el-checkbox>
+			</el-checkbox-group>
+		</el-form-item>
+
+		<el-form-item
+			v-if="form.allowPaymentMethodList.includes('CreditCard')"
+			prop="paymentMethodOptions.CreditCard.installmentCounts"
+			label="信用卡分期期數"
+		>
+			<el-checkbox-group
+				v-model="form.paymentMethodOptions.CreditCard.installmentCounts"
+			>
+				<el-checkbox
+					v-for="period in creditCardInstallment"
+					:key="period"
+					:label="period"
+				>
+					{{ period }}
 				</el-checkbox>
 			</el-checkbox-group>
 		</el-form-item>
 
-		<el-form-item>
+		<el-form-item
+			v-if="form.allowPaymentMethodList.includes('ChaileaseBNPL')"
+			prop="paymentMethodOptions.ChaileaseBNPL.installmentCounts"
+			label="中租分期期數"
+		>
+			<el-checkbox-group
+				v-model="form.paymentMethodOptions.ChaileaseBNPL.installmentCounts"
+			>
+				<el-checkbox
+					v-for="period in chaileaseBNPLInstallment"
+					:key="period"
+					:label="period"
+				>
+					{{ period }}
+				</el-checkbox>
+			</el-checkbox-group>
+		</el-form-item>
+
+		<el-form-item class="[&_.el-form-item\_\_content]:justify-center">
 			<el-button :loading="isSavePending" type="primary" @click="onSubmit"
 				>儲存</el-button
 			>

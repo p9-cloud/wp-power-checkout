@@ -82,7 +82,8 @@ final class RedirectSettingsDTO extends DTO implements IGatewaySettings {
 
 	/** 取得實例 */
 	public static function instance(): self {
-		$settings_array = GatewayUtils::get_option_name(RedirectGateway::ID);
+		$option_name    = GatewayUtils::get_option_name(RedirectGateway::ID);
+		$settings_array = \get_option( $option_name, [] );
 		$settings_array = \is_array( $settings_array ) ? $settings_array : [];
 		return new self($settings_array);
 	}

@@ -61,6 +61,7 @@ final class PaymentMethodOption extends DTO {
 	/** 改寫 to_array */
 	public function to_array(): array {
 		$array = parent::to_array();
+		\sort($array['installmentCounts']);
 		unset($array['type']);
 		return $array;
 	}

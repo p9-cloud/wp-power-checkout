@@ -71,7 +71,7 @@ final class CreateSessionDTO extends DTO {
 	 *  @param string    $return_url 回傳 URL
 	 */
 	public static function create( \WC_Order $order, string $return_url ): self {
-		$settings = new RedirectSettingsDTO();
+		$settings = RedirectSettingsDTO::instance();
 		$total    = $order->get_total();
 		$args     = [
 			'referenceId'            => $order->get_id(),

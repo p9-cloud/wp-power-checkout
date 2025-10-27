@@ -159,7 +159,7 @@ final class WebHook extends ApiBase {
 	private function generate_hmac_sha256_signature( string $payload ): string {
 		// 確保資料是 UTF-8 編碼
 		$payload  = mb_convert_encoding( $payload, 'UTF-8', 'auto' );
-		$sign_key = ( new RedirectSettingsDTO() )->signKey;
+		$sign_key = ( RedirectSettingsDTO::instance() )->signKey;
 		return hash_hmac( 'sha256', $payload, $sign_key );
 	}
 

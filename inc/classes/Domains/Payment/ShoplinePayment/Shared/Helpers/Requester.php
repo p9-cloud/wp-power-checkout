@@ -31,7 +31,7 @@ final class Requester {
 		private readonly AbstractPaymentGateway $gateway,
 		private readonly \WC_Order $order
 	) {
-		$this->settings = new RedirectSettingsDTO();
+		$this->settings = RedirectSettingsDTO::instance();
 		if (!$this->gateway->order) {
 			$this->gateway->order = $this->order;
 		}
