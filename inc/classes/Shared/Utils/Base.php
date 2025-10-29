@@ -5,7 +5,7 @@
 
 declare (strict_types = 1);
 
-namespace J7\PowerCheckout\Utils;
+namespace J7\PowerCheckout\Shared\Utils;
 
 /**
  * Class Utils

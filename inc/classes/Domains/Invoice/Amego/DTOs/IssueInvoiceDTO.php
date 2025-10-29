@@ -12,7 +12,7 @@ use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EPrinterLang;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EPrinterType;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\ETaxType;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EZeroTaxRateReason;
-use J7\PowerCheckout\Utils\StrHelper;
+use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 
 

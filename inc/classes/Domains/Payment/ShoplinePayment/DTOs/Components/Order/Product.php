@@ -6,7 +6,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Order
 
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
 use J7\WpUtils\Classes\DTO;
-use J7\PowerCheckout\Utils\StrHelper;
+use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Amount;
 
 /**

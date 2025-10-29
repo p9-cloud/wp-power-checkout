@@ -11,7 +11,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderI
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
-use J7\PowerCheckout\Utils\StrHelper;
+use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 
 class CreateRefundDTO extends DTO {

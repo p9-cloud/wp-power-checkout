@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 
 use J7\WpUtils\Classes\DTO;
-use J7\PowerCheckout\Utils\StrHelper;
+use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\CustomerType;
 
 /**

@@ -2,7 +2,7 @@
 
 declare (strict_types = 1);
 
-namespace J7\PowerCheckout\Utils;
+namespace J7\PowerCheckout\Shared\Utils;
 
 /**
  * StrHelper 輔助函數，協助字串轉換、驗證

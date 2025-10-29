@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
 use J7\PowerCheckout\Plugin;
-use J7\PowerCheckout\Utils\Base;
+use J7\PowerCheckout\Shared\Utils\Base;
 
 /**
  * WooCommerce 設定分頁服務

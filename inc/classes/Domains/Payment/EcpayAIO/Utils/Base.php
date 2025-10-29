@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils;
 
-use J7\PowerCheckout\Utils\StrHelper;
+use J7\PowerCheckout\Shared\Utils\StrHelper;
 
 /** Utils */
 abstract class Base {
