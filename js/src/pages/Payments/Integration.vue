@@ -92,7 +92,6 @@ watch(
 const isTestMode = computed(() => form.mode === 'test')
 
 const onSubmit = async () => {
-	console.log('toRaw(form)', toRaw(form))
 	await formRef.value.validate((valid: boolean) => {
 		if (valid) {
 			save(toRaw(form)) // 呼叫 mutation
