@@ -414,9 +414,3 @@ const isLocal = window.power_checkout_data.env.IS_LOCAL
 		</el-form-item>
 	</el-form>
 </template>
-
-<style>
-#power-checkout-wc-setting-app .el-divider__text {
-	background-color: #f0f0f1;
-}
-</style>

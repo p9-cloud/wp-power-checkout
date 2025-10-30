@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 
-#power-checkout-wc-setting-app {
+#power-checkout-wc-setting-app,
+#power_checkout_invoice_meta_box,
+#power_checkout_refund_dialog {
 
     /* wp-admin 後台 input 會有預設的 Style */
 
@@ -29,5 +31,9 @@
             outline: none;
             box-shadow: none;
         }
+    }
+
+    .el-divider__text {
+        background-color: #f0f0f1;
     }
 }

@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Invoice\Amego\Services;
 
 use J7\PowerCheckout\Domains\Invoice\Shared\Abstracts\AbstractInvoiceService;
+use J7\PowerCheckout\Domains\Invoice\Shared\Interfaces\IService;
 use J7\WpUtils\Classes\WP;
 
-final class AmegoService extends AbstractInvoiceService {
+final class AmegoService extends AbstractInvoiceService implements IService {
 
 	const ID = 'amego';
 
@@ -29,5 +30,15 @@ final class AmegoService extends AbstractInvoiceService {
 
 		$order_note = WP::array_to_html( $args, [ 'title' => "{$message} <p style='margin-bottom: 0;'>&nbsp;</p>" ] );
 		$order->add_order_note( $order_note );
+	}
+
+	public function issue( \WC_Order $order ): array {
+		// TODO: Implement issue() method.
+		return [];
+	}
+
+	public function cancel( \WC_Order $order ): array {
+		// TODO: Implement cancel() method.
+		return [];
 	}
 }

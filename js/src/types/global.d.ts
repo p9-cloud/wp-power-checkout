@@ -1,4 +1,4 @@
-import { IOrderData } from '@/external/order/types'
+import { IOrderData } from '@/external/RefundDialog/types'
 
 export {}
 
@@ -13,7 +13,6 @@ export interface IEnv {
 	SNAKE: string
 	NONCE: string
 	APP1_SELECTOR: string
-	IS_LOCAL: boolean
 }
 
 declare global {
@@ -22,5 +21,8 @@ declare global {
 			env: IEnv
 		} // 或更精確的型別
 		power_checkout_order_data: IOrderData
+		power_checkout_invoice_metabox_app_data: {
+			render_id: string
+		}
 	}
 }

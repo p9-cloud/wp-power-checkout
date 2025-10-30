@@ -24,6 +24,7 @@ final class Bootstrap {
 		Domains\Payment\Loader::register_hooks();
 		Domains\Settings\Services\SettingApiService::register_hooks();
 		Domains\Settings\Services\SettingTabService::register_hooks();
+		Domains\Invoice\ServiceRegister::register_hooks();
 
 		\add_action( 'before_woocommerce_init', [ __CLASS__, 'declare_compatibility' ] );
 		\add_action('admin_head', [ __CLASS__, 'custom_css' ]);
@@ -76,9 +77,17 @@ final class Bootstrap {
 			return;
 		}
 
+		// 宣告 Blocks 結帳相容性
 		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
 			'cart_checkout_blocks',
 			'power-checkout\plugin.php'
+		);
+
+		// 宣告 HPOS (High-Performance Order Storage) 相容性
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+			'custom_order_tables',
+			'power-checkout\plugin.php',
+			true
 		);
 	}
 
