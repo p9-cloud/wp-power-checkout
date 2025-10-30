@@ -7,7 +7,7 @@ import apiClient from '@/api'
 import type { FormRules } from 'element-plus'
 import { merge } from 'lodash-es'
 
-interface IFormData {
+type TFormData = {
 	// --- 一般設定 --- //
 	title: string
 	description: string
@@ -17,7 +17,7 @@ interface IFormData {
 	expire_min: number
 	// --- API --- //
 	mode: string
-	platformId?: string
+	// platformId?: string
 	merchantId: string
 	apiKey: string
 	clientKey: string
@@ -42,7 +42,7 @@ const { isPending, data } = useQuery({
 		await apiClient.get<{
 			code: string
 			message: string
-			data: IFormData
+			data: TFormData
 		}>(`gateways/${gatewayId}/settings`),
 	select: (res) => res.data?.data,
 })
@@ -51,7 +51,7 @@ const { isPending, data } = useQuery({
 const formRef = ref()
 
 // 表單資料
-const form = reactive<IFormData>({
+const form = reactive<TFormData>({
 	// --- 一般設定 --- //
 	title: '',
 	description: '',
@@ -101,7 +101,7 @@ const queryClient = useQueryClient()
 
 // 定義 mutation
 const { mutate: save, isPending: isSavePending } = useMutation({
-	mutationFn: async (payload: IFormData) =>
+	mutationFn: async (payload: TFormData) =>
 		await apiClient.post(`/gateways/${gatewayId}/settings`, payload),
 	onSuccess: () => {
 		// 成功後可刷新相關快取
@@ -112,7 +112,7 @@ const { mutate: save, isPending: isSavePending } = useMutation({
 	},
 })
 
-const rules = reactive<FormRules<IFormData>>({
+const rules = reactive<FormRules<TFormData>>({
 	merchantId: [
 		{ required: true, message: '此欄位為必填' },
 	],
@@ -293,20 +293,20 @@ const apiUrl = window.power_checkout_data.env.API_URL
 			/>
 		</el-form-item>
 
-		<el-form-item prop="platformId">
-			<template #label>
-				<span class="flex gap-x-2 items-center">
-					<span>Platform Id</span>
-					<el-tooltip
-						content="SLP 平台 ID，平台特店必填，平台特店底下會有子特店"
-						placement="top"
-					>
-						<el-icon><InfoFilled /></el-icon>
-					</el-tooltip>
-				</span>
-			</template>
-			<el-input v-model="form.platformId" :disabled="isTestMode" clearable />
-		</el-form-item>
+		<!--		<el-form-item prop="platformId">-->
+		<!--			<template #label>-->
+		<!--				<span class="flex gap-x-2 items-center">-->
+		<!--					<span>Platform Id</span>-->
+		<!--					<el-tooltip-->
+		<!--						content="SLP 平台 ID，平台特店必填，平台特店底下會有子特店"-->
+		<!--						placement="top"-->
+		<!--					>-->
+		<!--						<el-icon><InfoFilled /></el-icon>-->
+		<!--					</el-tooltip>-->
+		<!--				</span>-->
+		<!--			</template>-->
+		<!--			<el-input v-model="form.platformId" :disabled="isTestMode" clearable />-->
+		<!--		</el-form-item>-->
 
 		<el-form-item :required="!isTestMode" prop="merchantId">
 			<template #label>
