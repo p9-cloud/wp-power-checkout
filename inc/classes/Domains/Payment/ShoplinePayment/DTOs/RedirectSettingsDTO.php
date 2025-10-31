@@ -43,7 +43,7 @@ final class RedirectSettingsDTO extends DTO implements IGatewaySettings {
 	public int $max_amount = 0;
 
 	/** @var string $mode Enums\Mode::value 模式  */
-	public string $mode = 'test';
+	public string $mode = 'prod';
 
 	// endregion
 

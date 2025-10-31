@@ -124,6 +124,7 @@ class SettingTabService {
 					'SNAKE'           => Plugin::$snake,
 					'NONCE'           => \wp_create_nonce( 'wp_rest' ),
 					'APP1_SELECTOR'   => Base::APP1_SELECTOR,
+					'IS_LOCAL'        => Plugin::$env === 'local',
 				],
 			]
 		);

@@ -37,7 +37,7 @@ const form = reactive<TFormData>({
 	max_amount: 0,
 	expire_min: 360,
 	// --- API --- //
-	mode: 'test',
+	mode: 'prod',
 	merchantId: '',
 	apiKey: '',
 	clientKey: '',
@@ -59,6 +59,9 @@ watch(
 		if (newData) {
 			// 深層合併，只合併 form 存在的屬性
 			const filteredData = pick(newData, Object.keys(form))
+			if (!isLocal) {
+				filteredData.mode = 'prod'
+			}
 			merge(form, filteredData)
 			// 將 API 回傳資料輸入表單
 		}
@@ -137,6 +140,7 @@ const chaileaseBNPLInstallment = [
 	'36',
 ]
 const apiUrl = window.power_checkout_data.env.API_URL
+const isLocal = window.power_checkout_data.env.IS_LOCAL
 </script>
 
 <template>
@@ -253,7 +257,11 @@ const apiUrl = window.power_checkout_data.env.API_URL
 
 		<el-divider>API 設定</el-divider>
 
-		<el-form-item>
+		<el-form-item
+			:class="{
+				'tw-hidden': !isLocal,
+			}"
+		>
 			<template #label>
 				<span class="flex gap-x-2 items-center">
 					<span>啟用測試模式</span>

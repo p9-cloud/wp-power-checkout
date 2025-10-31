@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Utils\GatewayUtils;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\WpUtils\Classes\ApiBase;
 use J7\WpUtils\Classes\WP;
 use J7\WpUtils\Traits\SingletonTrait;

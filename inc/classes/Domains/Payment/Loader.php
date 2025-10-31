@@ -64,7 +64,7 @@ final class Loader {
 					'id'           => $order->get_payment_method(),
 					'method_title' => $order->get_payment_method_title(),
 				],
-				'order'   => [
+				'order' => [
 					'id'                      => (string) $order->get_id(),
 					'total'                   => \wc_price($order->get_total()),
 					'remaining_refund_amount' => \wc_price($order->get_remaining_refund_amount()),
