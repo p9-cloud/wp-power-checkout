@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook;
 
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\AmountTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ReferenceOrderIdTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 

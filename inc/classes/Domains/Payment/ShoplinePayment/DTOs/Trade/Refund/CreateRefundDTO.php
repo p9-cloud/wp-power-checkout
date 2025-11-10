@@ -6,10 +6,10 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Refund;
 
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Amount;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\PaymentDTO;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AdditionalDataTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderIdTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\AdditionalDataTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ReferenceOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\TradeOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\AmountTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
 use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;

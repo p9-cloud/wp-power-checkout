@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
 
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceIdTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\SessionIdTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\SessionUrlTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\AmountTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ReferenceIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\SessionIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\SessionUrlTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\StatusTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
@@ -19,12 +19,12 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus
  * @see https://docs.shoplinepayments.com/api/event/model/session/
  */
 final class Session extends DTO {
-    use ReferenceIdTrait;
-    use SessionIdTrait;
+	use ReferenceIdTrait;
+	use SessionIdTrait;
 	use StatusTrait;
-    use AmountTrait;
-    use SessionUrlTrait;
-    
+	use AmountTrait;
+	use SessionUrlTrait;
+
 	/** @var int *訂單建立時間 */
 	public int $createTime;
 
@@ -66,7 +66,7 @@ final class Session extends DTO {
 	}
 
 	/** 自訂驗證邏輯 */
-    protected function validate(): void {
+	protected function validate(): void {
 		parent::validate();
 		if (isset( $this->status)) {
 			ResponseStatus::from( $this->status );

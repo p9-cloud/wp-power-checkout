@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
 
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ActionTypeTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AdditionalDataTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\NextActionTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\OrderTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\PaymentMsgTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\PaymentTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceOrderIdTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ActionTypeTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\AdditionalDataTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\NextActionTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\OrderTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\PaymentMsgTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\PaymentTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ReferenceOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\StatusTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\TradeOrderIdTrait;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseSubStatus;
@@ -57,7 +57,7 @@ final class Payment extends DTO {
 	}
 
 	/** 自訂驗證邏輯 */
-    protected function validate(): void {
+	protected function validate(): void {
 		parent::validate();
 		if (isset($this->status)) {
 			ResponseStatus::from($this->status);

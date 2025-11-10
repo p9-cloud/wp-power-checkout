@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\StatusTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\TradeOrderIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\StatusTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\TradeOrderIdTrait;
 use J7\WpUtils\Classes\DTO;
 
 /**

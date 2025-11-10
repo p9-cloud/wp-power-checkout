@@ -1,6 +1,6 @@
 <?php
 
-namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits;
+namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits;
 
 trait StatusTrait {
 	/** @var string Enums\ResponseStatus::value *結帳交易狀態 (16) */

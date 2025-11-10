@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Session;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Params;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\SessionIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\SessionIdTrait;
 use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 

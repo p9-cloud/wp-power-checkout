@@ -8,9 +8,9 @@ use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\PaymentMethodOptions;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\AmountTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\LanguageTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Traits\ReferenceIdTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\AmountTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\LanguageTrait;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ReferenceIdTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
 use J7\WpUtils\Classes\DTO;
 
