@@ -4,7 +4,7 @@ declare ( strict_types = 1 );
 
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http;
 
-use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\PowerCheckout\Domains\Payment\Shared\Helpers\Params;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;

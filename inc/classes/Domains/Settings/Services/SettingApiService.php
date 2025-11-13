@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
+use J7\PowerCheckout\Domains\Invoice\Shared\Utils\InvoiceUtils;
 use J7\PowerCheckout\Domains\Payment\Shared\Utils\GatewayUtils;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
@@ -25,6 +26,10 @@ final class SettingApiService extends ApiBase {
 
 	/** @var array 已註冊的 API 列表 */
 	protected $apis = [
+		[
+			'endpoint' => 'settings',
+			'method'   => 'get',
+		],
 		[
 			'endpoint' => 'gateways',
 			'method'   => 'get',
@@ -52,6 +57,29 @@ final class SettingApiService extends ApiBase {
 	}
 
 	// region settings 相關
+
+	/**
+	 * 取得設定
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public static function get_settings_callback( \WP_REST_Request $request ): \WP_REST_Response {
+		$gateways = GatewayUtils::get_gateways(false, true);
+		return new \WP_REST_Response(
+			[
+				'code'    => 'get_settings_success',
+				'message' => '取得設定成功',
+				'data'    => [
+					'gateways'  => $gateways,
+					'invoices'  =>InvoiceUtils::get_registered_integration_dtos(),
+					'logistics' => [],
+				],
+			],
+			200
+		);
+	}
 
 	/**
 	 * 取得設定

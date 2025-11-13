@@ -6,7 +6,7 @@
 			<el-menu background-color="transparent" default-active="/payments" router>
 				<el-menu-item index="/payments"> 金流 </el-menu-item>
 				<el-menu-item index="/logistics" disabled> 物流🚧 </el-menu-item>
-				<el-menu-item index="/invoices" disabled> 電子發票🚧 </el-menu-item>
+				<el-menu-item index="/invoices"> 電子發票 </el-menu-item>
 				<el-menu-item index="/settings" disabled> 設定🚧 </el-menu-item>
 			</el-menu>
 		</div>

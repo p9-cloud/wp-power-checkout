@@ -1,11 +1,11 @@
 <?php
 
-declare (strict_types = 1);
+declare ( strict_types = 1 );
 
 namespace J7\PowerCheckout\Domains\Invoice;
 
-use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoService;
-use J7\PowerCheckout\Domains\Invoice\Shared\Interfaces\IService;
+use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoIntegration;
+use J7\PowerCheckout\Domains\Invoice\Shared\Utils\InvoiceUtils;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment;
 use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\PowerCheckout\Shared\Utils\OrderUtils;
@@ -16,8 +16,6 @@ final class ServiceRegister {
 	// 發票 APP 渲染用的 ID
 	private const RENDER_ID = 'power_checkout_invoice_metabox_app';
 
-	// 註冊 invoice provider 使用的 hook name
-	private const REGISTER_INVOICE_PROVIDER_HOOK_NAME = 'power_checkout_invoice_providers';
 
 	/** 註冊 hooks */
 	public static function register_hooks(): void {
@@ -25,27 +23,33 @@ final class ServiceRegister {
 		// 使用 'add_meta_boxes' hook 可以同時支援兩種儲存方式
 		\add_action( 'add_meta_boxes', [ __CLASS__, 'add_invoice_meta_box' ] );
 		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'issue_invoice_script' ], 20 );
-		\add_filter(self::REGISTER_INVOICE_PROVIDER_HOOK_NAME, [ __CLASS__, 'register_invoice_providers' ]);
+		\add_filter( 'power_checkout_register_invoices', [ __CLASS__ , 'register_invoices' ] );
+
+		/** @var array<string, string> $mapper [id, class] */
+		$mapper = InvoiceUtils::get_registered_services();
+
+		foreach ( $mapper as $id => $class ) {
+			// 如果電子發票啟用，才實例化放入容器
+			if (!InvoiceUtils::is_enabled( $id)) {
+				continue;
+			}
+			InvoiceUtils::$container[ $id ] = \call_user_func([ $class, 'instance' ]);
+		}
 	}
 
-	/**
-	 * 註冊服務提供商
-	 *
-	 * @param array $providers 服務提供商
-	 *
-	 * @return array<string, IService> 服務提供商 service_id, service
-	 */
-	public static function register_invoice_providers( array $providers ): array {
-		$providers[ AmegoService::ID ] = new AmegoService();
-		return $providers;
+	/** 註冊發票服務 @param array<string, string> $invoice 電子發票 @return array<string, string> */
+	public static function register_invoices( array $invoice ): array {
+		$invoice[ AmegoIntegration::ID ] = AmegoIntegration::class;
+		return $invoice;
 	}
+
 
 	/**
 	 * 新增發票 MetaBox
 	 *
 	 * @param string $post_type 文章類型
 	 */
-	public static function add_invoice_meta_box( string $post_type ): void { // phpcs:ignore
+    public static function add_invoice_meta_box( string $post_type ): void { // phpcs:ignore
 		// 支援 HPOS 和傳統訂單
 		// HPOS: screen_id 為 'woocommerce_page_wc-orders'
 		// 傳統: post_type 為 'shop_order'
@@ -77,14 +81,13 @@ final class ServiceRegister {
 		// 取得訂單物件
 		$order = $post_or_order instanceof \WC_Order ? $post_or_order : \wc_get_order( $post_or_order->ID );
 
-		if ( ! $order ) {
+		if ( !$order ) {
 			echo '無法取得訂單資訊';
 			return;
 		}
 
-		printf("<div id='%s'></div>", self::RENDER_ID);
+		printf( "<div id='%s'></div>", self::RENDER_ID );
 	}
-
 
 
 	/**
@@ -95,14 +98,14 @@ final class ServiceRegister {
 	 * @return void
 	 */
 	public static function issue_invoice_script( $hook ): void {
-		if (!OrderUtils::is_order_detail($hook)) {
+		if ( !OrderUtils::is_order_detail( $hook ) ) {
 			return;
 		}
 		SettingTabService::enqueue_vue_app();
 
-		$order_id = OrderUtils::get_order_id($hook);
-		$order    = \wc_get_order($order_id);
-		if (!$order instanceof \WC_Order) {
+		$order_id = OrderUtils::get_order_id( $hook );
+		$order    = \wc_get_order( $order_id );
+		if ( !$order instanceof \WC_Order ) {
 			return;
 		}
 
@@ -113,30 +116,50 @@ final class ServiceRegister {
 			$obj_name,
 			[
 				'render_id' => self::RENDER_ID,
-				'providers' => self::get_services(),
+				'providers' => InvoiceUtils::get_registered_services(),
 				'order'     => [
 					'id'                      => (string) $order->get_id(),
-					'total'                   => \wc_price($order->get_total()),
-					'remaining_refund_amount' => \wc_price($order->get_remaining_refund_amount()),
+					'total'                   => \wc_price( $order->get_total() ),
+					'remaining_refund_amount' => \wc_price(
+						$order->get_remaining_refund_amount()
+					),
 				],
 
 			]
 		);
 	}
 
-	/** @return array<IService> 取得所有的服務提供商*/
-	public static function get_services(): array {
-		return \apply_filters( self::REGISTER_INVOICE_PROVIDER_HOOK_NAME, []);
-	}
 
 	/**
-	 * 註冊服務提供商
+	 * TODO
+	 * 設定台灣預設稅率設定
 	 *
-	 * @param string $service_id 發票服務 id
-	 *
-	 * @return IService|null
+	 * @return void
 	 */
-	public static function get_service( string $service_id ): IService|null {
-		return self::get_services()[ $service_id ] ?? null;
+	public static function set_tw_default_setting() {
+
+		$tax_class = \WC_Tax::create_tax_class('零稅率4');
+
+		if ( ! \is_wp_error( $tax_class ) ) {
+			// 步驟 2: 為該類別創建實際的稅率
+			$tax_rate_id = \WC_Tax::_insert_tax_rate(
+				[
+					'tax_rate_country' => 'TW',
+					'tax_rate'         => '0',
+					'tax_rate_name'    => '零稅率4',
+					'tax_rate_class'   => $tax_class['slug'], // 使用剛創建的類別 slug
+				]
+			);
+		}
+
+		$order = \wc_get_order( 268 );
+		echo '<pre>';
+		var_dump(
+			[
+				'get_items_tax_classes' => $order->get_items_tax_classes(),
+			]
+		);
+		echo '</pre>';
+		echo '<br>------------------<br>';
 	}
 }

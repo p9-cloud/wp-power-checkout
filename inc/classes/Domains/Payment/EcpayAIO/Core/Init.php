@@ -5,7 +5,7 @@ declare ( strict_types = 1 );
 namespace J7\PowerCheckout\Domains\Payment\EcpayAIO\Core;
 
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
-use J7\PowerCheckout\Domains\Payment\Shared\BlocksIntegration;
+use J7\PowerCheckout\Domains\Payment\Shared\Helpers\BlocksIntegration;
 use J7\WpUtils\Classes\General;
 
 /**

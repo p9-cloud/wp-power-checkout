@@ -7,7 +7,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 use J7\PowerCheckout\Domains\Payment\Contracts\IGateway;
 use J7\PowerCheckout\Domains\Payment\Contracts\IGatewaySettings;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
-use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\PowerCheckout\Domains\Payment\Shared\Helpers\Params;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\PaymentDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Refund\RefundDTO;

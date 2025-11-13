@@ -9,7 +9,7 @@ use J7\PowerCheckout\Domains\Payment\Contracts\IRegisterGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Utils\GatewayUtils;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Plugin;
-use J7\PowerCheckout\Domains\Payment\Shared\BlocksIntegration;
+use J7\PowerCheckout\Domains\Payment\Shared\Helpers\BlocksIntegration;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
 
 /**

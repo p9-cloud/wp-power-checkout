@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Invoice\Shared\Interfaces;
 
-interface IService {
+interface IInvoiceService {
 
 	/**
 	 * 開立發票

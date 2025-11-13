@@ -7,7 +7,7 @@ namespace J7\PowerCheckout\Domains\Payment\Shared\Abstracts;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\GatewaySupport;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\ProcessResult;
-use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\PowerCheckout\Domains\Payment\Shared\Helpers\Params;
 use J7\WpUtils\Classes\DTO;
 use J7\WpUtils\Classes\WP;
 

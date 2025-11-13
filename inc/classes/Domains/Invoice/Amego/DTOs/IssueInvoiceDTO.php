@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare( strict_types = 1 );
 
 namespace J7\PowerCheckout\Domains\Invoice\Amego\DTOs;
 
@@ -12,6 +12,7 @@ use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EPrinterLang;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EPrinterType;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\ETaxType;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EZeroTaxRateReason;
+use J7\PowerCheckout\Domains\Invoice\Shared\Params;
 use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 
@@ -51,8 +52,13 @@ final class IssueInvoiceDTO extends DTO {
 	/** @var string 載具隱碼 */
 	public string $CarrierId2;
 
+	/** @var string 列印註記 Y:列印 N:不列印 */
+	public string $PrintMark = 'N';
+
 	/** @var string 捐贈碼 */
 	public string $NPOBAN;
+
+	public string $RandomNumber;
 
 	/** @var ProductItemDTO[] 商品陣列，最多 9999 筆 */
 	public array $ProductItem;
@@ -69,7 +75,7 @@ final class IssueInvoiceDTO extends DTO {
 	/** @var ETaxType 課稅別　1：應稅　2：零稅率　3：免稅　4：應稅(特種稅率)　9：混合應稅與免稅或零稅率(限訊息C0401使用) */
 	public ETaxType $TaxType;
 
-	/** @var string 稅率，為5%時本欄位值為0.05 */
+	/** @var string 稅率，為 5% 時本欄位值為0.05 */
 	public string $TaxRate = '0.05';
 
 	/** @var float 營業稅額。有打統編才需計算5%稅額，沒打統編發票一律帶0 */
@@ -121,7 +127,7 @@ final class IssueInvoiceDTO extends DTO {
 	protected function after_init(): void {
 		// 有打統編才需計算5%稅額，沒打統編發票一律帶0。
 		$this->TaxAmount = 0;
-		if ($this->BuyerIdentifier !== '0000000000') {
+		if ( $this->BuyerIdentifier !== '0000000000' ) {
 			$this->TaxAmount = $this->SalesAmount * (float) $this->TaxRate;
 		}
 	}
@@ -133,19 +139,115 @@ final class IssueInvoiceDTO extends DTO {
 	 */
 	protected function validate(): void {
 		parent::validate();
-		( new StrHelper( $this->OrderId, 'OrderId', 40) )->validate();
-		if (\in_array($this->BuyerName, [ '0','00','000','0000' ], true)) {
-			throw new \Exception('BuyerName 不能是 0,00,000,0000');
+		( new StrHelper( $this->OrderId, 'OrderId', 40 ) )->validate();
+		if ( \in_array( $this->BuyerName, [ '0', '00', '000', '0000' ], true ) ) {
+			throw new \Exception( 'BuyerName 不能是 0,00,000,0000' );
 		}
 
-		if (isset($this->MainRemark)) {
-			( new StrHelper( $this->MainRemark, 'MainRemark', 200) )->validate();
+		if ( isset( $this->MainRemark ) ) {
+			( new StrHelper( $this->MainRemark, 'MainRemark', 200 ) )->validate();
 		}
 	}
 
 	/** 從訂單創建實例 */
 	public static function create( \WC_Order $order ): self {
-		$args = [];
-		return new self($args);
+		$params = new Params( $order );
+
+		$SalesAmount        = 0;
+		$FreeTaxSalesAmount = 0;
+		$ZeroTaxSalesAmount = 0;
+
+		$product_items = [];
+		/** @var \WC_Order_Item_Product $item */
+		foreach ( $order->get_items() as $item ) {
+			// 取得數量
+			$Quantity = $item->get_quantity();
+
+			// 取得合計 (結算完折扣、未稅)
+			$total = $item->get_total();
+
+			// 單價 = 合計 ÷ 數量
+			$UnitPrice = $Quantity > 0 ? ( $total / $Quantity ) : 0;
+
+			$TaxType = self::get_tax_type( $item );
+
+			$SalesAmount        += ( 1 === $TaxType ) ? 0 : $total;
+			$ZeroTaxSalesAmount += ( 2 === $TaxType ) ? 0 : $total;
+			$FreeTaxSalesAmount += ( 3 === $TaxType ) ? 0 : $total;
+
+			$item_data = [
+				'Description' => $item->get_name(),
+				'Quantity'    => $Quantity,
+				'UnitPrice'   => $UnitPrice,
+				'Amount'      => $total,
+				'Remark'      => '',
+				'TaxType'     => $TaxType,
+			];
+
+			$product_items[] = $item_data;
+		}
+
+		$order_args = [
+			'OrderId'              => $order->get_id(),
+			'BuyerAddress'         => $order->get_formatted_billing_address(),
+			'BuyerTelephoneNumber' => $order->get_billing_phone(),
+			'BuyerEmailAddress'    => $order->get_billing_email(),
+			'RandomNumber'         => $order->get_id(),
+			'ProductItem'          => $product_items,
+			'SalesAmount'          => $SalesAmount,
+			'FreeTaxSalesAmount'   => $FreeTaxSalesAmount,
+			'ZeroTaxSalesAmount'   => $ZeroTaxSalesAmount,
+			'TaxType'              => self::get_order_tax_type( $SalesAmount, $FreeTaxSalesAmount, $ZeroTaxSalesAmount ),
+			'TaxRate'              => '0.05',
+			'TotalAmount'          => $order->get_total(),
+			'DetailVat'            => 1, // 含稅
+			'DetailAmountRound'    => 1, // 四捨五入
+		];
+		$args       = \wp_parse_args( $params->get_issue_data(), $order_args );
+
+		return new self( $args );
+	}
+
+	private static function get_tax_type( \WC_Order_Item_Product $item ): int {
+		$enabled_tax = \get_option( 'woocommerce_calc_taxes' ) === 'yes';
+		if ( $enabled_tax ) {
+			return 1; // 應稅
+		}
+
+		$status = $item->get_tax_status();
+		$tax    = $item->get_subtotal_tax();
+
+		if ( 'taxable' === $status && !$tax ) {
+			return 2; // 零稅率
+		}
+
+		if ( 'none' === $status && !$tax ) {
+			return 3;
+		}
+
+		return 1;
+	}
+
+
+	/**
+	 * 課稅別
+	 * 目前沒有考慮 4：應稅(特種稅率)　9：混合應稅與免稅或零稅率(限訊息C0401使用)
+	 *
+	 * @param int $SalesAmount 應稅銷售額合計
+	 * @param int $FreeTaxSalesAmount 免稅銷售額合計
+	 * @param int $ZeroTaxSalesAmount 零稅率銷售額合計
+	 *
+	 * @return int
+	 * @see https://invoice.amego.tw/api_doc/#api-%E7%99%BC%E7%A5%A8-Invoice
+	 */
+	private static function get_order_tax_type( int $SalesAmount, int $FreeTaxSalesAmount, int $ZeroTaxSalesAmount ): int {
+		if (!$SalesAmount && !$FreeTaxSalesAmount && $ZeroTaxSalesAmount) {
+			return 2;
+		}
+
+		if (!$SalesAmount && $FreeTaxSalesAmount && !$ZeroTaxSalesAmount) {
+			return 3;
+		}
+		return 1;
 	}
 }

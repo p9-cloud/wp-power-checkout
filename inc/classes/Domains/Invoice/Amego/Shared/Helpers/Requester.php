@@ -6,7 +6,7 @@ namespace J7\PowerCheckout\Domains\Invoice\Amego\Shared\Helpers;
 
 use J7\PowerCheckout\Domains\Invoice\Amego\DTOs\UniParamsDTO;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EApi;
-use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoService;
+use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoIntegration;
 
 
 /**
@@ -61,7 +61,7 @@ final class Requester {
 		$response_body = \json_decode( \wp_remote_retrieve_body( $response ), true, 512, JSON_THROW_ON_ERROR );
 
 		// LOG 記錄
-		AmegoService::logger(
+		AmegoIntegration::logger(
 			"{$api->label()} {$api->value} 請求參數 #{$this->order->get_id()}",
 			'info',
 			[
@@ -70,7 +70,7 @@ final class Requester {
 			],
 		);
 
-		AmegoService::logger(
+		AmegoIntegration::logger(
 			"✅ {$api->label()} {$api->value} 發送請求成功 #{$this->order->get_id()}",
 			'info',
 			$response_body

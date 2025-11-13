@@ -7,7 +7,7 @@ namespace J7\PowerCheckout\Domains\Payment\EcpayAIO\DTOs;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\Services\Services;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils\Base as EcpayUtils;
 use J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway;
-use J7\PowerCheckout\Domains\Payment\Shared\Params;
+use J7\PowerCheckout\Domains\Payment\Shared\Helpers\Params;
 use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 

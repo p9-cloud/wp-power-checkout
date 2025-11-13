@@ -2,7 +2,7 @@
 
 declare (strict_types = 1);
 
-namespace J7\PowerCheckout\Domains\Payment\Shared;
+namespace J7\PowerCheckout\Domains\Payment\Shared\Helpers;
 
 /**
  * 請求、回應參數
@@ -27,11 +27,7 @@ class Params {
 		private readonly \WC_Order $_order,
 	) {}
 
-	/**
-	 * 取得訂單識別碼
-	 *
-	 * @return string
-	 */
+	/** @return string 取得訂單識別碼 */
 	public function get_identity(): string {
 		$payment_detail_array = $this->_order->get_meta( self::IDENTITY_KEY ) ?: '';
 		return (string) $payment_detail_array;
@@ -49,11 +45,7 @@ class Params {
 	}
 
 
-	/**
-	 * 取得付款識別碼
-	 *
-	 * @return string
-	 */
+	/** @return string 取得付款識別碼 */
 	public function get_payment_identity(): string {
 		$payment_detail_array = $this->_order->get_meta( self::IDENTITY_PAYMENT_KEY ) ?: '';
 		return (string) $payment_detail_array;
@@ -91,11 +83,7 @@ class Params {
 	}
 
 
-	/**
-	 * 取得付款詳情 array
-	 *
-	 * @return array<string, mixed>
-	 */
+	/** @return array<string, mixed> 取得付款詳情 array */
 	public function get_payment_detail(): array {
 		$payment_detail_array = $this->_order->get_meta( self::PAYMENT_DETAIL_KEY ) ?: [];
 		return is_array($payment_detail_array) ? $payment_detail_array : [];
@@ -113,11 +101,7 @@ class Params {
 	}
 
 
-	/**
-	 * 取得退款詳情 array
-	 *
-	 * @return array<string, mixed>
-	 */
+	/** @return array<string, mixed> 取得退款詳情 array */
 	public function get_refund_detail(): array {
 		$refund_detail_array = $this->_order->get_meta( self::REFUND_DETAIL_KEY ) ?: [];
 		return \is_array($refund_detail_array) ? $refund_detail_array : [];
