@@ -11,6 +11,8 @@ use J7\PowerCheckout\Domains\Invoice\Shared\Services\InvoiceApiService;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment;
 use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\PowerCheckout\Shared\DTOs\BaseSettingsDTO;
+use J7\PowerCheckout\Shared\DTOs\CheckoutFieldDTO;
+use J7\PowerCheckout\Shared\Utils\CheckoutFields;
 use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
 use J7\PowerCheckout\Shared\Utils\OrderUtils;
 use J7\WpUtils\Classes\WP;
@@ -33,6 +35,7 @@ final class ServiceRegister {
 		// 使用 'add_meta_boxes' hook 可以同時支援兩種儲存方式
 		\add_action( 'add_meta_boxes', [ __CLASS__, 'add_invoice_meta_box' ] );
 		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'issue_invoice_script' ], 20 );
+		\add_action( 'plugins_loaded', [ CheckoutFields::class, 'register_hooks' ], 1000);
 
 		$any_enabled = false;
 		foreach ( self::$invoice_services as $id => $class ) {
@@ -47,6 +50,13 @@ final class ServiceRegister {
 		// 有啟用的服務才註冊 API
 		if ($any_enabled) {
 			InvoiceApiService::instance();
+
+			( new CheckoutFieldDTO(
+				[
+					'id'    => '_pc_company_id',
+					'label' => '統一編號',
+				]
+				) )->register();
 		}
 
 		// TEST ----- ▼ 測試特定 hook 記得刪除 ----- //
