@@ -5,15 +5,16 @@ declare ( strict_types = 1 );
 namespace J7\PowerCheckout\Domains\Invoice;
 
 use J7\PowerCheckout\Domains\Invoice\Amego\Http\ApiClient;
-use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoIntegration;
+use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoProvider;
 use J7\PowerCheckout\Domains\Invoice\Shared\Helpers\MetaKeys;
 use J7\PowerCheckout\Domains\Invoice\Shared\Services\InvoiceApiService;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment;
 use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
+use J7\PowerCheckout\Plugin;
 use J7\PowerCheckout\Shared\DTOs\BaseSettingsDTO;
 use J7\PowerCheckout\Shared\DTOs\CheckoutFieldDTO;
 use J7\PowerCheckout\Shared\Utils\CheckoutFields;
-use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
+use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 use J7\PowerCheckout\Shared\Utils\OrderUtils;
 use J7\WpUtils\Classes\WP;
 
@@ -25,7 +26,7 @@ final class ServiceRegister {
 
 	/** @var array<string, string> $invoice_services [id, class]  */
 	private static array $invoice_services = [
-		AmegoIntegration::ID => AmegoIntegration::class,
+		AmegoProvider::ID => AmegoProvider::class,
 	];
 
 
@@ -35,16 +36,17 @@ final class ServiceRegister {
 		// 使用 'add_meta_boxes' hook 可以同時支援兩種儲存方式
 		\add_action( 'add_meta_boxes', [ __CLASS__, 'add_invoice_meta_box' ] );
 		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'issue_invoice_script' ], 20 );
+		\add_action( 'wp_enqueue_scripts', [ __CLASS__, 'issue_invoice_script' ], 20 );
 		\add_action( 'plugins_loaded', [ CheckoutFields::class, 'register_hooks' ], 1000);
 
 		$any_enabled = false;
 		foreach ( self::$invoice_services as $id => $class ) {
 			// 如果電子發票啟用，才實例化放入容器
-			if (!IntegrationUtils::is_enabled( $id)) {
+			if (!ProviderUtils::is_enabled( $id)) {
 				continue;
 			}
-			IntegrationUtils::$container[ $id ] = \call_user_func([ $class, 'instance' ]);
-			$any_enabled                        = true;
+			ProviderUtils::$container[ $id ] = \call_user_func( [ $class, 'instance' ]);
+			$any_enabled                     = true;
 		}
 
 		// 有啟用的服務才註冊 API
@@ -53,8 +55,8 @@ final class ServiceRegister {
 
 			( new CheckoutFieldDTO(
 				[
-					'id'    => '_pc_company_id',
-					'label' => '統一編號',
+					'id'    => MetaKeys::get_issue_params_key(),
+					'label' => '發票資料',
 				]
 				) )->register();
 		}
@@ -150,15 +152,26 @@ final class ServiceRegister {
 	 * @return void
 	 */
 	public static function issue_invoice_script( $hook ): void {
-		if ( !OrderUtils::is_order_detail( $hook ) ) {
-			return;
-		}
+		// if ( !OrderUtils::is_order_detail( $hook ) ) {
+		// return;
+		// }
 		SettingTabService::enqueue_vue_app();
 
+		// 暴露給前端的資料
+		$data = [
+			'render_ids'        => self::get_render_ids(),
+			'is_admin'          => \is_admin(),
+			'invoice_providers' => [],
+		];
+
 		$order_id = OrderUtils::get_order_id( $hook );
-		$order    = \wc_get_order( $order_id );
-		if ( !$order instanceof \WC_Order ) {
-			return;
+		if ($order_id) {
+			$order = \wc_get_order( $order_id );
+			if ( $order instanceof \WC_Order ) {
+				$data['order'] = [
+					'id' => (string) $order->get_id(),
+				];
+			}
 		}
 
 		// 要額外給前端的資料
@@ -166,20 +179,25 @@ final class ServiceRegister {
 		\wp_localize_script(
 			SettingTabService::$handle,
 			$obj_name,
-			[
-				'render_id' => self::RENDER_ID,
-				'order'     => [
-					'id' => (string) $order->get_id(),
-				],
-				'is_admin'  => \is_admin(),
-
-			]
+			$data
 		);
 	}
 
 
-	/** @return BaseSettingsDTO[] 取得 integration 設定 dtos */
-	public static function get_registered_integration_dtos(): array {
+	/** @return BaseSettingsDTO[] 取得 provider 設定 dtos */
+	public static function get_registered_provider_dtos(): array {
 		return \array_map( static fn( $class_name ) => BaseSettingsDTO::create( $class_name), self::$invoice_services );
+	}
+
+	/** @return array<string> 取得渲染的 ids */
+	private static function get_render_ids(): array {
+		$field_id = MetaKeys::get_issue_params_key();
+		$kebab    = Plugin::$kebab;
+
+		return [
+			self::RENDER_ID, // 後台 metabox
+			$field_id, // 傳統結帳
+			"order-{$kebab}-{$field_id}", // 區塊結帳
+		];
 	}
 }

@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 import { Setting } from '@element-plus/icons-vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { TIntegration } from '@/types'
+import { TProvider } from '@/types'
 import apiClient from '@/api'
 import { ROUTER_MAPPER } from '@/router'
 
-const props = withDefaults(defineProps<TIntegration>(), {
+const props = withDefaults(defineProps<TProvider>(), {
 	description: '',
 	icon: '',
 	enabled: 'yes',

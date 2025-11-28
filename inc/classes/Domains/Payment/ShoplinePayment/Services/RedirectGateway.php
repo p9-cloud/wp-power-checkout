@@ -20,7 +20,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGat
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
 use J7\PowerCheckout\Plugin;
-use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
+use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 use J7\WpUtils\Classes\WP;
 
 /**
@@ -231,7 +231,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 				unset($default_array[ $key ]);
 			}
 
-			return \wp_parse_args( IntegrationUtils::get_option( self::ID), $default_array);
+			return \wp_parse_args( ProviderUtils::get_option( self::ID), $default_array);
 		}
 		return RedirectSettingsDTO::instance()->to_array();
 	}

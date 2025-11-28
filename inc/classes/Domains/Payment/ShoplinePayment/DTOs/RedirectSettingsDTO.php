@@ -8,7 +8,7 @@ use J7\PowerCheckout\Domains\Payment\Shared\Interfaces\IGatewaySettings;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\PowerCheckout\Shared\Enums\Mode;
 use J7\PowerCheckout\Shared\Traits\EnableTrait;
-use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
+use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 use J7\WpUtils\Classes\DTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
 
@@ -82,7 +82,7 @@ final class RedirectSettingsDTO extends DTO implements IGatewaySettings {
 
 	/** 取得實例 */
 	public static function instance(): self {
-		$settings_array = IntegrationUtils::get_option( RedirectGateway::ID );
+		$settings_array = ProviderUtils::get_option( RedirectGateway::ID );
 		$settings_array = \is_array( $settings_array ) ? $settings_array : [];
 		return new self($settings_array);
 	}

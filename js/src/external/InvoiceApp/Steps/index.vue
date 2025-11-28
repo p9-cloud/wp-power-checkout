@@ -9,7 +9,11 @@ import {
 } from '@/external/InvoiceApp/Shared/constants'
 import { useMutation } from '@tanstack/vue-query'
 import apiClient from '@/api'
-import { appData } from '@/external/InvoiceApp'
+import { appData, MAPPER, isAdmin } from '@/external/InvoiceApp'
+
+const emit = defineEmits<{
+	close: []
+}>()
 
 const active = ref(0)
 
@@ -84,18 +88,38 @@ const handleIssue = async () => {
 			return
 		}
 
-		console.log(toRaw(form))
-		const orderId = appData?.order?.id
-		const isAdmin = appData?.is_admin // 是否在後台 還是 前台 checkout
+		const formObj = toRaw(form)
+		console.log(formObj)
+
+		// Admin 介面就發 API 開發票
 		if (isAdmin) {
+			const orderId = appData?.order?.id
 			issueInvoice({
 				orderId,
-				data: toRaw(form),
+				data: formObj,
 			})
+			emit('close')
+			return
 		}
-		// if (valid) {
-		// 	save(toRaw(form)) // 呼叫 mutation
-		// }
+
+		// Checkout 頁面就填入 input 欄位
+		const render_ids = appData?.render_ids || []
+		render_ids.forEach((id: string) => {
+			const input = document.getElementById(id) as HTMLInputElement
+			if (!input) {
+				return
+			}
+			console.log(input)
+			// 確認 input html tag name 為 input
+			if ('INPUT' !== (input?.tagName || '').toUpperCase()) {
+				return
+			}
+
+			input.value = JSON.stringify(formObj)
+			emit('close')
+
+			//TODO 區塊結帳之後處理
+		})
 	})
 }
 </script>
@@ -246,9 +270,16 @@ const handleIssue = async () => {
 			}"
 			type="primary"
 			:loading="isPending"
-			>開立發票</el-button
+			>{{ MAPPER.ISSUE_INVOICE }}</el-button
 		>
 	</div>
 </template>
 
-<style></style>
+<style>
+.el-radio {
+	position: relative !important;
+	left: unset !important;
+	top: unset !important;
+	max-width: unset !important;
+}
+</style>

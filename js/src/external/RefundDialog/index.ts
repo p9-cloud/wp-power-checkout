@@ -13,6 +13,10 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
  */
 const Module = () => {
 	const CONTAINER_ID = 'power_checkout_refund_dialog'
+	const node = document.getElementById(CONTAINER_ID)
+	if (!node) {
+		return
+	}
 	const body = document.querySelector('body')
 	// 在 body 結束前 render div
 	body?.insertAdjacentHTML('beforeend', `<div id="${CONTAINER_ID}"></div>`)

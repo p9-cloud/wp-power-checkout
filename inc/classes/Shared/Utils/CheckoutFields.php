@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Shared\Utils;
 
+use J7\PowerCheckout\Domains\Invoice\Shared\Helpers\MetaKeys;
 use J7\PowerCheckout\Shared\DTOs\CheckoutFieldDTO;
 
 /**
@@ -64,19 +65,24 @@ final class CheckoutFields {
 		}
 	}
 
-	public function save_checkout_field_to_order( int $order_id ): void {
+	public static function save_checkout_field_to_order( int $order_id ): void {
 		$order = \wc_get_order( $order_id );
 		if ( ! $order instanceof \WC_Order ) {
 			return;
 		}
 
+		// 傳統結帳，$_POST 的 key 為 $field->id
 		foreach (self::get_fields() as $field) {
-
-			if ( isset( $_POST['billing_birthday'] ) ) {
-				// 透過 set_meta 方法，WooCommerce 會自動處理儲存到傳統 post meta 或 HPOS custom table。
-				$order->set_meta_data( '_billing_birthday', sanitize_text_field( wp_unslash( $_POST['billing_birthday'] ) ) );
+			if ( !isset( $_POST[ $field->id ] ) ) { // phpcs:ignore
+				continue;
 			}
-			$order->update_meta_data( $field->id, sanitize_text_field( wp_unslash( $_POST[ $field->id ] ) ) );
+			$value = $_POST[ $field->id ]; // phpcs:ignore
+
+			// TEST ----- ▼ 印出 WC Logger 記得移除 ----- //
+			\J7\WpUtils\Classes\WC::logger( 'value', 'info', $value );
+			// TEST ---------- END ---------- //
+
+			$order->update_meta_data( $field->id, $value );
 		}
 
 		$order->save();

@@ -8,10 +8,10 @@ use J7\PowerCheckout\Domains\Invoice\Amego\DTOs\AmegoSettingsDTO;
 use J7\PowerCheckout\Domains\Invoice\Amego\Http\ApiClient;
 use J7\PowerCheckout\Domains\Invoice\Shared\Interfaces\IInvoiceService;
 use J7\PowerCheckout\Shared\Abstracts\BaseService;
-use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
+use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 use J7\WpUtils\Classes\WP;
 
-final class AmegoIntegration extends BaseService implements IInvoiceService {
+final class AmegoProvider extends BaseService implements IInvoiceService {
 	use \J7\WpUtils\Traits\SingletonTrait;
 
 	public const ID = 'amego';
@@ -69,7 +69,7 @@ final class AmegoIntegration extends BaseService implements IInvoiceService {
 	 */
 	public static function get_settings( bool $with_default = true ): array {
 		if (!$with_default) {
-			return IntegrationUtils::get_option( self::ID);
+			return ProviderUtils::get_option( self::ID);
 		}
 		return AmegoSettingsDTO::instance()->to_array();
 	}

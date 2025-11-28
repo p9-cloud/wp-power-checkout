@@ -14,13 +14,22 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
  */
 
 export const appData = window?.power_checkout_invoice_metabox_app_data
+export const isAdmin = !!appData?.is_admin ?? false
+
+const MAPPER_ADMIN = {
+	ISSUE_INVOICE: '開立發票',
+}
+const MAPPER_CHECKOUT = {
+	ISSUE_INVOICE: '設定發票資訊',
+}
+export const MAPPER = isAdmin ? MAPPER_ADMIN : MAPPER_CHECKOUT
 
 const Module = () => {
 	if (!appData) {
 		return
 	}
 
-	const CONTAINER_ID = appData?.render_id
+	const CONTAINER_IDS = appData?.render_ids
 
 	// Mount Vue app
 	const app = createApp(App)
@@ -40,7 +49,21 @@ const Module = () => {
 	})
 	app.use(VueQueryPlugin, { queryClient })
 	app.use(ElementPlus)
-	app.mount(`#${CONTAINER_ID}`)
+
+	setTimeout(() => {
+		CONTAINER_IDS?.forEach((id) => {
+			const node = document.getElementById(id)
+			if (!node) {
+				return
+			}
+			// 在 node 隔壁創建 render div
+			const containerDiv = document.createElement('div')
+			containerDiv.id = `${id}_container`
+			node.insertAdjacentElement('afterend', containerDiv)
+
+			app.mount(`#${id}_container`)
+		})
+	}, 1000)
 }
 
 export default Module

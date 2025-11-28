@@ -9,7 +9,7 @@ use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EApi;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Helpers\Requester;
 use J7\PowerCheckout\Domains\Invoice\Shared\DTOs\InvoiceParams;
 use J7\PowerCheckout\Domains\Invoice\Shared\Helpers\MetaKeys;
-use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoIntegration;
+use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoProvider;
 
 /**
  * 光貿電子方票
@@ -37,7 +37,7 @@ final class ApiClient {
 		if ($response_dto) {
 			$meta_keys->update_issued_data( $response_dto->to_array());
 		}
-		$meta_keys->update_service_id(AmegoIntegration::ID );
+		$meta_keys->update_service_id(AmegoProvider::ID );
 
 		return $response_dto;
 	}

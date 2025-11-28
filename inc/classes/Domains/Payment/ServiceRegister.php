@@ -8,7 +8,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Refund\CreateRef
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\PowerCheckout\Domains\Settings\Services\SettingTabService;
 use J7\PowerCheckout\Plugin;
-use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
+use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 use J7\PowerCheckout\Shared\Utils\OrderUtils;
 
 /** ServiceRegister 註冊付款方式 */
@@ -30,7 +30,7 @@ final class ServiceRegister {
 		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'refund_script' ], 20 );
 
 		foreach (self::$gateway_services as $gateway_id => $gateway_service) {
-			if (!IntegrationUtils::is_enabled($gateway_id)) {
+			if (!ProviderUtils::is_enabled( $gateway_id)) {
 				continue;
 			}
 
@@ -41,8 +41,8 @@ final class ServiceRegister {
 			// 取得 WC_Payment_Gateways 單例
 			$gateways = \WC_Payment_Gateways::instance();
 			// 取得所有 gateway 實例 (陣列)
-			$all_gateways                               = $gateways?->payment_gateways();
-			IntegrationUtils::$container[ $gateway_id ] = $all_gateways[ $gateway_id ];
+			$all_gateways                            = $gateways?->payment_gateways();
+			ProviderUtils::$container[ $gateway_id ] = $all_gateways[ $gateway_id ];
 		}
 	}
 

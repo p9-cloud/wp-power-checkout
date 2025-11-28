@@ -1,4 +1,4 @@
-export type TIGateway = TIntegration & {
+export type TIGateway = TProvider & {
 	plugin_id: 'woocommerce_'
 	errors: any[]
 	settings: {
@@ -31,7 +31,7 @@ export type TIGateway = TIntegration & {
 	}
 }
 
-export type TIntegration = {
+export type TProvider = {
 	id: string
 	icon: string
 	enabled: 'yes' | 'no'

@@ -7,7 +7,7 @@ namespace J7\PowerCheckout\Domains\Invoice\Amego\Shared\Helpers;
 use J7\PowerCheckout\Domains\Invoice\Amego\DTOs\IssueInvoiceResponseDTO;
 use J7\PowerCheckout\Domains\Invoice\Amego\DTOs\UniParamsDTO;
 use J7\PowerCheckout\Domains\Invoice\Amego\Shared\Enums\EApi;
-use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoIntegration;
+use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoProvider;
 
 
 /**
@@ -45,7 +45,7 @@ final class Requester {
 			$api_url          = self::API_URL . $api->value;
 
 			// LOG 記錄
-			AmegoIntegration::logger(
+			AmegoProvider::logger(
 				"{$api->label()} {$api->value} 請求參數 #{$this->order->get_id()}",
 				'info',
 				[
@@ -80,7 +80,7 @@ final class Requester {
 			}
 
 			// LOG 記錄
-			AmegoIntegration::logger(
+			AmegoProvider::logger(
 				"✅ {$api->label()} {$api->value} 成功 #{$this->order->get_id()}",
 				'info',
 				$response_body,
@@ -91,7 +91,7 @@ final class Requester {
 			return $response_dto;
 		} catch ( \Throwable $e ) {
 			// LOG 記錄
-			AmegoIntegration::logger(
+			AmegoProvider::logger(
 				"❌ {$api->label()} {$api->value} 失敗 #{$this->order->get_id()}： {$e->getMessage()}",
 				'error',
 				[],

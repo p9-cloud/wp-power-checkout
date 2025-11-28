@@ -13,7 +13,7 @@ use J7\PowerCheckout\Domains\Invoice\Shared\DTOs\InvoiceParams;
 use J7\PowerCheckout\Domains\Invoice\Shared\Helpers\MetaKeys;
 use J7\PowerCheckout\Domains\Invoice\Shared\Interfaces\IInvoiceService;
 use J7\PowerCheckout\Domains\Invoice\Shared\Utils\InvoiceUtils;
-use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
+use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 use J7\WpUtils\Classes\ApiBase;
 
 /** Invoice Api Service */
@@ -94,7 +94,7 @@ final class InvoiceApiService extends ApiBase {
 		}
 
 		$invoice_id =( new MetaKeys( $order) )->get_service_id();
-		$service    = IntegrationUtils::get_integration_instance( $invoice_id);
+		$service    = ProviderUtils::get_provider_instance( $invoice_id);
 
 		if (!$service) {
 			throw new \Exception("找不到電子發票服務 {$invoice_id}，請檢查是否啟用");

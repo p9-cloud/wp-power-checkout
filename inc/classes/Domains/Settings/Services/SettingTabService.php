@@ -24,16 +24,17 @@ class SettingTabService {
 	/**
 	 * 取得存在 DB 中的 資料
 	 *
-	 * @param string $integration_key integration key
+	 * @param string $provider_key integration key
+	 *
 	 * @return array 取得設定
 	 */
-	public static function get_settings( string $integration_key = '' ): array {
+	public static function get_settings( string $provider_key = '' ): array {
 		$settings = \get_option( self::OPTION_NAME );
 		$settings = \is_array( $settings ) ? $settings : [];
-		if (!$integration_key) {
+		if ( !$provider_key) {
 			return $settings;
 		}
-		return $settings[ $integration_key ] ?? [];
+		return $settings[ $provider_key ] ?? [];
 	}
 
 	/** @param array $value 儲存設定 */
@@ -49,6 +50,7 @@ class SettingTabService {
 		\add_action( 'woocommerce_settings_tabs_array', [ __CLASS__, 'add_settings_tab' ], 30);
 		\add_action( 'admin_head', [ __CLASS__, 'hide_default_element' ]);
 		\add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ], 0 );
+		\add_action( 'wp_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ], 0 );
 	}
 
 	/**

@@ -4,6 +4,8 @@ declare (strict_types = 1);
 
 namespace J7\PowerCheckout\Domains\Invoice\Shared\Helpers;
 
+use J7\PowerCheckout\Plugin;
+
 /** 每次發票請求，不論是哪種發票，都將資料儲存在 order meta 中 */
 class MetaKeys {
 
@@ -25,13 +27,49 @@ class MetaKeys {
 		private readonly \WC_Order $order,
 	) {}
 
-	/** @return array 開立發票的參數 */
+	/** @return string 紀錄開立發票的參數 KEY */
+	public static function get_issue_params_key(): string {
+		return self::ISSUE_INVOICE_PARAMS_KEY;
+	}
+
+	/**
+	 * @param string $key KEY
+	 * @param mixed  $default 預設值
+	 * @return array 開立發票的參數
+	 */
 	public function get_issue_params( string $key = '', mixed $default = null ): mixed {
-		$issue_params_array = (array) ( $this->order->get_meta( self::ISSUE_INVOICE_PARAMS_KEY ) ?: [] );
-		if (!$key) {
-			return $issue_params_array;
+		$issue_params_array = $this->order->get_meta( self::ISSUE_INVOICE_PARAMS_KEY );
+
+		if (!$issue_params_array) {
+			return null;
 		}
-		return $issue_params_array[ $key ] ?? $default;
+
+		// 如果值存在，且為 string，那應該是 json string
+		if (\is_string($issue_params_array)) {
+			// 先去除斜線
+			$issue_params_string = \wp_unslash( $issue_params_array );
+			try {
+				return \json_decode( $issue_params_string, true, 512, JSON_THROW_ON_ERROR );
+			} catch (\Throwable $e) {
+				Plugin::logger(
+					'json decode 失敗 meta key: ' . self::ISSUE_INVOICE_PARAMS_KEY,
+					'error',
+					[
+						'error'  => $e->getMessage(),
+						'params' => $issue_params_array,
+					]
+				);
+				return null;
+			}
+		}
+
+		if (!\is_array($issue_params_array)) {
+			if (!$key) {
+				return $issue_params_array;
+			}
+			return $issue_params_array[ $key ] ?? $default;
+		}
+		return null;
 	}
 
 	/**

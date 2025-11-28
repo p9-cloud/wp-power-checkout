@@ -23,7 +23,7 @@ declare global {
 		} // 或更精確的型別
 		power_checkout_order_data: IOrderData
 		power_checkout_invoice_metabox_app_data: {
-			render_id: string
+			render_ids: string[]
 			order: {
 				id: ''
 			}

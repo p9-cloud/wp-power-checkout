@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Invoice\Amego\DTOs;
 
-use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoIntegration;
+use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoProvider;
 use J7\PowerCheckout\Shared\DTOs\BaseSettingsDTO;
 use J7\PowerCheckout\Shared\Enums\Mode;
-use J7\PowerCheckout\Shared\Utils\IntegrationUtils;
+use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 
 final class AmegoSettingsDTO extends BaseSettingsDTO {
 	// region 基礎通用欄位
 
 	/** @var string $id Id */
-	public string $id = AmegoIntegration::ID;
+	public string $id = AmegoProvider::ID;
 
 	/** @var string 付款方式 icon */
 	public string $icon = 'https://invoice-static.amego.tw/www/images/amego_20231206.svg'; // 'https://invoice-static.amego.tw/www/images/amego_1024_icon.png'
@@ -45,7 +45,7 @@ final class AmegoSettingsDTO extends BaseSettingsDTO {
 
 	/** @return self 取得實例 */
 	public static function instance(): self {
-		$args = IntegrationUtils::get_option( AmegoIntegration::ID);
+		$args = ProviderUtils::get_option( AmegoProvider::ID);
 		return new self($args);
 	}
 

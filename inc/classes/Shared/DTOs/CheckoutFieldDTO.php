@@ -38,8 +38,13 @@ final class CheckoutFieldDTO extends DTO {
 	/** @var int 優先級 */
 	public int $priority = 200;
 
-	/** @var string 欄位位置 */
-	public string $location = 'address';  // or 'contact' or 'order'
+	/**
+	 * @var string 欄位位置
+	 * contact → 存在 customer meta 與 order meta
+	 * address → 存在 billing 與 shipping 的 order meta
+	 * order → 存在 order meta（不會存到 customer）
+	 */
+	public string $location = 'order';  // or 'contact' or 'order'
 
 
 	/** 註冊欄位 */

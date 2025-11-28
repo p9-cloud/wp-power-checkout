@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useMutation } from '@tanstack/vue-query'
 import apiClient from '@/api'
-import { appData } from './index'
+import { appData, isAdmin, MAPPER } from './index'
 import Steps from './Steps/index.vue'
 
 const dialogVisible = ref(false)
@@ -24,21 +24,27 @@ const handleCancel = () => {
 
 <template>
 	<div class="flex justify-between items-center">
-		<el-button type="danger" @click="handleCancel" :loading="isCanceling"
+		<el-button
+			v-if="isAdmin"
+			type="danger"
+			@click="handleCancel"
+			:loading="isCanceling"
 			>作廢發票</el-button
 		>
-		<el-button type="primary" @click="dialogVisible = true">開立發票</el-button>
+		<el-button type="primary" @click="dialogVisible = true">{{
+			MAPPER.ISSUE_INVOICE
+		}}</el-button>
 	</div>
 
 	<el-dialog
 		v-model="dialogVisible"
-		title="開立發票"
+		:title="MAPPER.ISSUE_INVOICE"
 		width="600"
 		align-center
 		:z-index="999999"
 		class="p-8"
 	>
-		<Steps />
+		<Steps @close="dialogVisible = false" />
 	</el-dialog>
 </template>
 
