@@ -78,5 +78,6 @@ module.exports = {
 		'blur',
 		'size-full',
 		'container',
+		'rtl',
 	],
 }
