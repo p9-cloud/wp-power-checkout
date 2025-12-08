@@ -76,5 +76,7 @@ module.exports = {
 		'block',
 		'inline',
 		'blur',
+		'size-full',
+		'container',
 	],
 }
