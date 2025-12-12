@@ -20,6 +20,7 @@ final class OrderUtils {
 
 	/** @return bool Is Order Detail Page */
 	public static function is_order_detail( $hook = '' ): bool {
+
 		if (!$hook && isset($_GET['page'])) { // phpcs:ignore
 			return 'wc-orders' === $_GET['page'] && isset($_GET['id']); // phpcs:ignore
 		}
@@ -29,6 +30,19 @@ final class OrderUtils {
 		}
 
 		if ('post.php' === $hook && 'shop_order' === \get_post_type() ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/** @return bool Is Order List Page */
+	public static function is_order_list( $hook = '' ): bool {
+		if ('woocommerce_page_wc-orders' === $hook) {
+			return true;
+		}
+
+		if ('edit.php' === $hook && 'shop_order' === @$_GET['post_type'] ) { // phpcs:ignore
 			return true;
 		}
 

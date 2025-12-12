@@ -6,6 +6,7 @@ namespace J7\PowerCheckout\Domains\Settings\Services;
 
 use J7\PowerCheckout\Plugin;
 use J7\PowerCheckout\Shared\Utils\Base;
+use J7\PowerCheckout\Shared\Utils\OrderUtils;
 
 /**
  * WooCommerce 設定分頁服務
@@ -96,9 +97,11 @@ class SettingTabService {
 	 * @return void
 	 */
 	public static function enqueue_scripts( $hook ): void { // phpcs:ignore
-		// 只在指定的 WC Settings tab 載入
-        if ($hook === 'woocommerce_page_wc-settings' && !self::is_current_tab()) { // phpcs:ignore
-			return;
+
+		if (\is_admin()) {
+			if (!OrderUtils::is_order_detail($hook) || !self::is_current_tab() || !OrderUtils::is_order_list()) {
+				return;
+			}
 		}
 
 		\wp_register_script(
