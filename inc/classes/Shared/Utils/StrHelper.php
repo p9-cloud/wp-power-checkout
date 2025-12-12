@@ -87,8 +87,10 @@ final class StrHelper {
 	 * @return self 處理後的字串，只保留中文、英文和數字
 	 */
 	public function filter(): self {
+		// 先過濾 html
+		$value = \sanitize_text_field( $this->value );
 		// 使用正則表達式替換所有非中文、英文和數字的字符為空字串
-		$this->value = preg_replace('/[^\p{Han}a-zA-Z0-9 ]/u', '', $this->value) ?? '';
+		$this->value = \preg_replace('/[^\p{Han}a-zA-Z0-9 ]/u', '', $value) ?? '';
 		return $this;
 	}
 
