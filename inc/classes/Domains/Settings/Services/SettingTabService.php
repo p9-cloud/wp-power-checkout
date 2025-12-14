@@ -99,7 +99,7 @@ class SettingTabService {
 	public static function enqueue_scripts( $hook ): void { // phpcs:ignore
 
 		if (\is_admin()) {
-			if (!OrderUtils::is_order_detail($hook) || !self::is_current_tab() || !OrderUtils::is_order_list()) {
+			if (!OrderUtils::is_order_detail($hook) && !self::is_current_tab() && !OrderUtils::is_order_list()) {
 				return;
 			}
 		}
