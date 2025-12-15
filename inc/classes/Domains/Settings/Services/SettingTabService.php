@@ -86,7 +86,10 @@ class SettingTabService {
 	/** @return bool 是否為目前的設定分頁 */
 	private static function is_current_tab(): bool {
 		[$tab_key ] = self::$tab;
-        return 'wc-settings' === @$_GET['page'] && $tab_key === @$_GET['tab']; // phpcs:ignore
+        if(!isset($_GET['page'], $_GET['tab'])) { // phpcs:ignore
+			return false;
+		}
+        return 'wc-settings' === $_GET['page'] && $tab_key === $_GET['tab']; // phpcs:ignore
 	}
 
 	/**
