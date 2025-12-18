@@ -6,13 +6,13 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Helpers\MetaKeys;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\StatusManager;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services\RedirectGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
 use J7\PowerCheckout\Plugin;
 use J7\WpUtils\Classes\ApiBase;
-use function _\last;
 
 /**
  * WebHooks 用來接收 Shopline 的 WebHooks 通知
@@ -68,6 +68,17 @@ final class WebHook extends ApiBase {
 			// 處理退款
 			if ($webhook_data_dto instanceof Webhooks\Refund) {
 				$this->handle_refund($webhook_data_dto);
+			}
+
+			if ($webhook_data_dto instanceof Webhooks\Payment && $webhook_data_dto->is_successed_or_failed()) {
+				$order = MetaKeys::get_order_by_identity_payment_key($webhook_data_dto->tradeOrderId );
+
+				if (!$order) {
+					throw new \Exception("找不到訂單，tradeOrderId: {$webhook_data_dto->tradeOrderId}");
+				}
+
+				$status_manager = new StatusManager( $webhook_data_dto, $order );
+				$status_manager->update_order_status();
 			}
 
 			// 收到通知就始終回 200 ，不用讓 SLP 重試

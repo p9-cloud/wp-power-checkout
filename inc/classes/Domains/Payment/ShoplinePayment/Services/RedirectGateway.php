@@ -5,19 +5,18 @@ declare ( strict_types = 1 );
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Services;
 
 use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
-use J7\PowerCheckout\Domains\Payment\Shared\Interfaces\IGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
 use J7\PowerCheckout\Domains\Payment\Shared\Helpers\BlocksIntegration;
 use J7\PowerCheckout\Domains\Payment\Shared\Helpers\MetaKeys;
+use J7\PowerCheckout\Domains\Payment\Shared\Interfaces\IGateway;
 use J7\PowerCheckout\Domains\Payment\Shared\Utils\GatewayUtils;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\PaymentDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Refund\RefundDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Refund as WebhooksRefundDTO;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\StatusManager;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\ApiClient;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
 use J7\PowerCheckout\Plugin;
 use J7\PowerCheckout\Shared\Utils\ProviderUtils;
@@ -152,12 +151,8 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 				return;
 			}
 
-			$response_dto   = ( new ApiClient( $this, $order ) )->get_payment();
-			$status_manager = new StatusManager( $response_dto, $order );
-			$status_manager->update_order_status();
-
 			// 儲存 payment_identity
-			$order_params->update_payment_identity( $response_dto->tradeOrderId);
+			$order_params->update_payment_identity( $trade_order_id);
 		} catch (\Throwable $e) {
 			$this->logger( "❌ {$this->title} 發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
 		}

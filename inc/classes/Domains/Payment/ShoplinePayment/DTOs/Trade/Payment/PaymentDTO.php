@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment;
 
 use J7\PowerCheckout\Domains\Payment\Shared\Helpers\MetaKeys;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseSubStatus;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ActionTypeTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\AdditionalDataTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\NextActionTrait;
@@ -14,11 +19,6 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\PaymentTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\ReferenceOrderIdTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\StatusTrait;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Traits\TradeOrderIdTrait;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus;
-use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseSubStatus;
 use J7\WpUtils\Classes\DTO;
 use J7\WpUtils\Classes\WP;
 
@@ -27,7 +27,7 @@ use J7\WpUtils\Classes\WP;
  *
  * @see https://docs.shoplinepayments.com/api/trade/query/
  */
-final class PaymentDTO extends DTO {
+class PaymentDTO extends DTO {
 	use ReferenceOrderIdTrait;
 	use TradeOrderIdTrait;
 	use StatusTrait;
@@ -51,16 +51,16 @@ final class PaymentDTO extends DTO {
 	 * 創建實例
 	 *
 	 * @param array $args 參數
-	 * @return self 實例
+	 * @return static 實例
 	 * @throws \Exception DTO 實例化失敗
 	 */
-	public static function create( array $args ): self {
+	public static function create( array $args ): static {
 		$args['order']   = Webhook\Order::create( $args['order'] ?? [] );
 		$args['payment'] = Webhook\Payment::create( $args['payment'] ?? [] );
 		if (isset($args['paymentMsg']) && \is_array($args['paymentMsg'])) {
 			$args['paymentMsg'] = new Components\ErrorMessage( $args['paymentMsg'] );
 		}
-		return new self( $args );
+		return new static( $args );
 	}
 
 	/**
@@ -68,11 +68,11 @@ final class PaymentDTO extends DTO {
 	 *
 	 * @param \WC_Order $order 已經付款後的訂單
 	 *
-	 * @return self
+	 * @return static
 	 */
-	public static function from_order( \WC_Order $order ): self {
+	public static function from_order( \WC_Order $order ): static {
 		$param = ( new MetaKeys( $order) )->get_payment_detail();
-		return self::create($param);
+		return static::create($param);
 	}
 
 
