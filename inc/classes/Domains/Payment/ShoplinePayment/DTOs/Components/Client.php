@@ -56,7 +56,7 @@ final class Client extends DTO {
     public static function create( \WC_Order $order ): self {
         $args = [
             'ip'        => $order->get_customer_ip_address() ?: '163.61.60.30',
-            'userAgent' => $order->get_customer_user_agent(),
+            'userAgent' => ( new StrHelper( $order->get_customer_user_agent(), 'userAgent', 128 ) )->substr()->value,
             'accept'    => ( new StrHelper(
                 \sanitize_text_field( \wp_unslash( $_SERVER['HTTP_ACCEPT'] ?? '' ) ), 'HTTP_ACCEPT', 128
             ) )->substr()->value,
