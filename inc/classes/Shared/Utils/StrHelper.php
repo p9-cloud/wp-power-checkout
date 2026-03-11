@@ -122,8 +122,8 @@ final class StrHelper {
 		$this->validate_special_char();
 	}
 
-	/** 取得唯一字串 */
-	public static function get_unique_string( $separator = '' ): string {
+	/** @param string $separator 分隔符號 @return string 取得唯一字串 */
+	public static function get_unique_string( string $separator = '' ): string {
 		$milliseconds = (int) ( new \DateTimeImmutable() )->format( 'Uv' ); // 13位
 		return $separator . \wp_unique_id() . $separator . $milliseconds;
 	}

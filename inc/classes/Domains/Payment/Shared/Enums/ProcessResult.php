@@ -31,10 +31,10 @@ namespace J7\PowerCheckout\Domains\Payment\Shared\Enums;
  * ];
  *  */
 enum ProcessResult: string {
-	/** @var string 成功 */
+	/** 成功 */
 	case SUCCESS = 'success';
 
-	/** @var string 失敗 */
+	/** 失敗 */
 	case FAILED = 'failure';
 
 	/**

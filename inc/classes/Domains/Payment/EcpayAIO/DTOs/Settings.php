@@ -35,7 +35,7 @@ final class Settings extends DTO {
 	/**
 	 * 創建實例，單例
 	 *
-	 * @param array $args 設定
+	 * @param array<string, mixed> $args 設定
 	 * @return self
 	 */
 	public static function create( array $args = [] ): self {

@@ -27,7 +27,7 @@ class SettingTabService {
 	 *
 	 * @param string $provider_key integration key
 	 *
-	 * @return array 取得設定
+	 * @return array<string, mixed> 取得設定
 	 */
 	public static function get_settings( string $provider_key = '' ): array {
 		$settings = \get_option( self::OPTION_NAME );
@@ -35,10 +35,12 @@ class SettingTabService {
 		if ( !$provider_key) {
 			return $settings;
 		}
-		return $settings[ $provider_key ] ?? [];
+		/** @var array<string, mixed> $result */
+		$result = $settings[ $provider_key ] ?? [];
+		return $result;
 	}
 
-	/** @param array $value 儲存設定 */
+	/** @param array<string, mixed> $value 儲存設定 */
 	public static function save_settings( array $value ): void {
 		\update_option( self::OPTION_NAME, $value );
 	}
@@ -57,8 +59,8 @@ class SettingTabService {
 	/**
 	 * 新增一個設定分頁到 WooCommerce 的設定分頁陣列。
 	 *
-	 * @param array $settings_tabs WooCommerce 設定分頁及標籤的陣列，不包含訂閱分頁。
-	 * @return array $settings_tabs WooCommerce 設定分頁及標籤的陣列，包含訂閱分頁。
+	 * @param array<string, string> $settings_tabs WooCommerce 設定分頁及標籤的陣列，不包含訂閱分頁。
+	 * @return array<string, string> $settings_tabs WooCommerce 設定分頁及標籤的陣列，包含訂閱分頁。
 	 */
 	public static function add_settings_tab( array $settings_tabs ): array {
 		[$tab_key, $tab_label]     = self::$tab;
@@ -120,7 +122,8 @@ class SettingTabService {
 
 		$obj_name  = Plugin::$snake . '_data'; // power_checkout_data
 		$post_id   = \get_the_ID();
-		$permalink = $post_id ? \get_permalink( $post_id ) : '';
+		$raw_permalink = $post_id ? \get_permalink( $post_id ) : '';
+		$permalink     = \is_string($raw_permalink) ? $raw_permalink : '';
 
 		$order_statuses_kv = \wc_get_order_statuses();
 		$order_statuses    = [];

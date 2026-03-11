@@ -39,6 +39,9 @@ abstract class GatewayUtils {
 
 	/** @return string[] 回傳 power_checkout 註冊的 payment_gateway_ids */
 	public static function get_powercheckout_gateway_ids(): array {
-		return \apply_filters( 'power_checkout_payment_gateway_ids', [] );
+		$result = \apply_filters( 'power_checkout_payment_gateway_ids', [] );
+		/** @var array<string> $ids */
+		$ids = \is_array($result) ? $result : [];
+		return $ids;
 	}
 }

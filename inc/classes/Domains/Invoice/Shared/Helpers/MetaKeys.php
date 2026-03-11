@@ -35,9 +35,9 @@ class MetaKeys {
 	/**
 	 * @param string $key KEY
 	 * @param mixed  $default 預設值
-	 * @return array 開立發票的參數
+	 * @return array<string, mixed>|null 開立發票的參數
 	 */
-	public function get_issue_params( string $key = '', mixed $default = null ): mixed {
+	public function get_issue_params( string $key = '', mixed $default = null ): array|null {
 		$issue_params_array = $this->order->get_meta( self::ISSUE_INVOICE_PARAMS_KEY );
 
 		if (!$issue_params_array) {
@@ -49,7 +49,10 @@ class MetaKeys {
 			// 先去除斜線
 			$issue_params_string = \wp_unslash( $issue_params_array );
 			try {
-				return \json_decode( $issue_params_string, true, 512, JSON_THROW_ON_ERROR );
+				$decoded = \json_decode( $issue_params_string, true, 512, JSON_THROW_ON_ERROR );
+				/** @var array<string, mixed>|null $result */
+				$result = \is_array($decoded) ? $decoded : null;
+				return $result;
 			} catch (\Throwable $e) {
 				Plugin::logger(
 					'json decode 失敗 meta key: ' . self::ISSUE_INVOICE_PARAMS_KEY,
@@ -63,11 +66,13 @@ class MetaKeys {
 			}
 		}
 
-		if (!\is_array($issue_params_array)) {
+		if (\is_array($issue_params_array)) {
+			/** @var array<string, mixed> $typed_array */
+			$typed_array = $issue_params_array;
 			if (!$key) {
-				return $issue_params_array;
+				return $typed_array;
 			}
-			return $issue_params_array[ $key ] ?? $default;
+			return [ $key => $typed_array[ $key ] ?? $default ];
 		}
 		return null;
 	}
@@ -75,7 +80,7 @@ class MetaKeys {
 	/**
 	 * 更新開立發票的參數
 	 *
-	 * @param array $value 開立發票的參數
+	 * @param array<string, mixed> $value 開立發票的參數
 	 * @return void
 	 */
 	public function update_issue_params( array $value ): void {
@@ -87,7 +92,7 @@ class MetaKeys {
 	/**
 	 * @param string $key KEY
 	 * @param mixed  $default 預設值
-	 * @return string 取得開立發票的資料
+	 * @return mixed 取得開立發票的資料
 	 */
 	public function get_issued_data( string $key = '', mixed $default = null ): mixed {
 		$issue_data_array = (array) ( $this->order->get_meta( self::ISSUED_INVOICE_DATA_KEY ) ?: [] );
@@ -100,7 +105,7 @@ class MetaKeys {
 	/**
 	 * 儲存開立發票的資料
 	 *
-	 * @param array $value 開立發票的資料
+	 * @param array<string, mixed> $value 開立發票的資料
 	 * @return void
 	 */
 	public function update_issued_data( array $value ): void {
@@ -156,7 +161,8 @@ class MetaKeys {
 	 * @return string
 	 */
 	public function get_provider_id(): string {
-		return $this->order->get_meta( self::PROVIDER_ID_KEY ) ?: '';
+		$value = $this->order->get_meta( self::PROVIDER_ID_KEY );
+		return \is_string($value) ? $value : '';
 	}
 
 	/**

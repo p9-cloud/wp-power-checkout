@@ -40,19 +40,7 @@ final class Order extends DTO {
 	];
 
 	/**
-	 * @param array{
-	 *    merchantId: string,
-	 *    amount: array{
-	 *      currency: string,
-	 *      value: int,
-	 *    },
-	 *    referenceOrderId: string,
-	 *    createTime: int,
-	 *    customer: {
-	 *      referenceCustomerId: string,
-	 *      customerId: string,
-	 *    },
-	 * } $args
+	 * @param array<string, mixed> $args 參數
 	 * @return self 創建實例
 	 */
 	public static function create( array $args ): self {

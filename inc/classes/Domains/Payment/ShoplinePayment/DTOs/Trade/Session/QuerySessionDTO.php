@@ -17,7 +17,7 @@ use J7\WpUtils\Classes\DTO;
 final class QuerySessionDTO extends DTO {
 	use SessionIdTrait;
 
-	/** @var array<string, string|int> 原始資料 */
+	/** @var array<string> 原始資料 */
 	protected array $require_properties = [ 'sessionId' ];
 
 	/**

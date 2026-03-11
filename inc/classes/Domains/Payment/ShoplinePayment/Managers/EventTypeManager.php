@@ -57,7 +57,7 @@ final class EventTypeManager {
 		// 更新狀態 & 填寫備註
 		/** @var Session $data  */
 		$data = $webhook_dto->data;
-		if ( $data->paymentDetails && is_array( $data->paymentDetails ) ) {
+		if ( $data->paymentDetails ) {
 			foreach ( $data->paymentDetails as $payment_detail ) {
 				$payment_detail_html = WP::array_to_html($payment_detail->to_array(), [ 'title' => $event_type->label() ]);
 				$order->add_order_note($payment_detail_html);

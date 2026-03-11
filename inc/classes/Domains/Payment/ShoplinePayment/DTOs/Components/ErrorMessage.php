@@ -25,7 +25,7 @@ final class ErrorMessage extends DTO {
 		'msg',
 	];
 
-	/** @return array 人類可讀文字 */
+	/** @return array<string, string> 人類可讀文字 */
 	public function to_human_array(): array {
 		if (!\str_replace( ' ', '', $this->code)) {
 			// 如果 code 是空字串

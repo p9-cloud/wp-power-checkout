@@ -14,6 +14,7 @@ use J7\PowerCheckout\Shared\Utils\OrderUtils;
 use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 use J7\WpUtils\Classes\WP;
 
+/** 光貿電子發票服務提供者 */
 final class AmegoProvider extends BaseService implements IInvoiceService {
 	use \J7\WpUtils\Traits\SingletonTrait;
 
@@ -46,7 +47,7 @@ final class AmegoProvider extends BaseService implements IInvoiceService {
 	/**
 	 * @param \WC_Order|int $order_or_id 訂單
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public function issue( \WC_Order|int $order_or_id ): array {
 		$order = ( $order_or_id instanceof \WC_Order ) ? $order_or_id : OrderUtils::get_order( $order_or_id);
@@ -54,7 +55,8 @@ final class AmegoProvider extends BaseService implements IInvoiceService {
 		// region 如果已經發行過，就不重複發行
 		$meta_keys   = new MetaKeys( $order);
 		$issued_data = $meta_keys->get_issued_data();
-		if ($issued_data && \is_array($issued_data)) {
+		if (\is_array($issued_data) && $issued_data) {
+			/** @var array<string, mixed> $issued_data */
 			return $issued_data;
 		}
 		// endregion 如果已經發行過，就不重複發行
@@ -68,7 +70,7 @@ final class AmegoProvider extends BaseService implements IInvoiceService {
 	/**
 	 * @param \WC_Order|int $order_or_id 訂單
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public function cancel( \WC_Order|int $order_or_id ): array {
 		$order = ( $order_or_id instanceof \WC_Order ) ? $order_or_id : OrderUtils::get_order( $order_or_id);
@@ -90,11 +92,12 @@ final class AmegoProvider extends BaseService implements IInvoiceService {
 	 * @param bool $with_default 是否有預設值，還是只拿 DB 值
 	 * false = 只拿 db, true = 會給預設值
 	 *
-	 * @return array 取得設定
+	 * @return array<string, mixed> 取得設定
 	 */
 	public static function get_settings( bool $with_default = true ): array {
 		if (!$with_default) {
-			return ProviderUtils::get_option( self::ID);
+			$option = ProviderUtils::get_option( self::ID);
+			return \is_array($option) ? $option : [];
 		}
 		return AmegoSettingsDTO::instance()->to_array();
 	}
@@ -109,6 +112,9 @@ final class AmegoProvider extends BaseService implements IInvoiceService {
 	public function get_invoice_number( \WC_Order $order ): string {
 		$meta_keys   = new MetaKeys( $order);
 		$issued_data = $meta_keys->get_issued_data();
-		return $issued_data['invoice_number'] ?? '';
+		if (\is_array($issued_data) && isset($issued_data['invoice_number'])) {
+			return (string) $issued_data['invoice_number'];
+		}
+		return '';
 	}
 }

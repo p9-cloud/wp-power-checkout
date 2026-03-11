@@ -27,213 +27,218 @@ use J7\Powerhouse\Domains\Order\Shared\Enums\Status as OrderStatus;
  */
 #[Create( Order::class )]
 class RedirectGatewayTest extends WC_UnitTestCase {
-    
-    /** @var Plugin[] 測試前需要安裝的插件 */
-    protected array $required_plugins = [
-        Plugin::WOOCOMMERCE,
-        Plugin::POWERHOUSE,
-        Plugin::POWER_CHECKOUT,
-    ];
-    
-    /** @var \J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway|null 測試支付網關 */
-    private PaymentGateway|null $gateway = null;
-    
-    /** 每個測試方法執行前執行一次 */
-    public function set_up(): void {
-        
-        // 呼叫 hook 註冊 API
-        parent::set_up();
-        $this->gateway = new RedirectGateway();
-        $order = $this->get_order();
-        
-        // 設定訂單付款方式
-        $order->set_payment_method( $this->gateway->id );
-        $order->save();
-        
-       
-    }
-    
-    /**
-     * 取得訂單
-     *
-     * @return \WC_Order
-     */
-    protected function get_order(): \WC_Order {
-        return $this->get_container( Order::class )->get_item();
-    }
-    
-    /**
-     * @testdox 發起結帳請求，成功是否取得跳轉 url
-     * @return void
-     * @throws \Exception
-     */
-    public function test_payment_success(): void {
-        $result = null;
-        // 模擬 API 環境 - 不發請求
-        if( Api::MOCK === self::$api ) {                // 這邊實例化 $service 看會不會報錯
-            $service = new ApiClient( $this->gateway, $this->get_order() );
-            $redirect = "https://pay-sandbox.shoplinepayments.com/checkout/session?sessionToken=BGPGC6M6A4A27OILWBY54WP4J5UDTY3BPE5SSMHPTTORKOPFRM2OWNYQ6C6KM4TFUYFQGWF3EMCDMRP7QHAZ2R3HADADXGYEQUEWJWDCZ32SLPR5EBKBMYGOCOOGZW4FIDKNHXQWAIS7US66XEBCBGZ5FM======--v1";
-            $result = ProcessResult::SUCCESS->to_array( $redirect );
-        }
-        
-        // 對金流測試環境發請求
-        if( Api::SANDBOX === self::$api ) {
-            // 測試建立 session 並取得 sessionUrl
-            $result = $this->gateway->process_payment( $this->get_order()->get_id() );
-        }
-        
-        // 對金流正式環境發請求
-        if( Api::PROD === self::$api ) {
-            throw new \Exception( '請求正式環境的測試尚未實作' );
-            // TODO: 這邊要發請求到正式環境
-        }
-        
-        // 且 redirect 有值，且為 url
-        $this->assertIsArray( $result, '結果應該是陣列' );
-        $this->assertEquals(
-            ProcessResult::SUCCESS->value, $result['result'], '結果應該是成功'
-        );
-        $this->assertIsString( $result['redirect'], '結果應該有 redirect 鍵' );
-    }
-    
-    /**
-     * @testdox 發起結帳請求，失敗是否印出錯誤
-     * @return void
-     * @throws \Exception
-     */
-    public function test_payment_failed(): void {
-        // 測試建立 session 並取得 sessionUrl 故意找不到訂單
-        // API 還沒發出去就會 throw error 了
-        $result = $this->gateway->process_payment( 0 );
-        
-        $this->assertIsArray( $result, '結果應該是陣列' );
-        $this->assertEquals( ProcessResult::FAILED->value, $result['result'], '結果應該是失敗' );
-        // 且沒有 redirect 鍵
-        $this->assertArrayNotHasKey( 'redirect', $result, '結果應該沒有 redirect 鍵' );
-        
-        // 結帳頁印出錯誤
-        $notices = \WC()->session->get( 'wc_notices' );
-        $this->assertNotEmpty( $notices, '結帳頁應該有錯誤訊息' );
-    }
-    
-    
-    /**
-     * @testdox SLP webhook 通知用戶【付款成功】後，訂單轉為【處理中】
-     * @return void
-     * @throws  \Exception
-     */
-    public function test_order_status_process_after_payment_success(): void {
-        $requester = new Requester( 'POST', '/power-checkout/slp/webhook' );
-        $res = $requester->set_body( __DIR__ . '/json/webhook.trade.succeeded.json' )->get_response();
-        
- 
-        $order = $this->get_order();
-        $order_status = $order->get_status();
-        $this->assertContains( $order_status, [ OrderStatus::PROCESSING->value, OrderStatus::COMPLETED->value ],
-                               "訂單狀態應為 " . OrderStatus::PROCESSING->label(
-                               ) . " 或 " . OrderStatus::COMPLETED->label() );
-    }
-    
-    /**
-     * @testdox SLP webhook 通知用戶【付款失敗】後，訂單轉為【等待付款中】
-     * @return void
-     */
-    public function test_order_status_pending_after_payment_failed(): void {
-        $requester = new Requester( 'POST', '/power-checkout/slp/webhook' );
-        $requester->set_body( __DIR__ . '/json/webhook.session.expired.json' )->get_response();
-        $order = $this->get_order();
-        $order_status = $order->get_status();
-        $this->assertEquals(
-            OrderStatus::PENDING->value, $order_status, "訂單狀態應為 " . OrderStatus::PENDING->label()
-        );
-    }
-    
-    /**
-     * @testdox SLP webhook 通知用戶【逾時未付】後，訂單轉為【取消】
-     * @return void
-     * @throws \Exception
-     */
-    public function test_order_status_cancelled_after_payment_expired(): void {
-        
-        $requester = new Requester( 'POST', '/power-checkout/slp/webhook' );
-        $requester->set_body( __DIR__ . '/json/webhook.session.expired.json' )->get_response();
-        $order = $this->get_order();
-        $order_status = $order->get_status();
-        $this->assertEquals(
-            OrderStatus::CANCELLED->value, $order_status, '訂單狀態應為 ' . OrderStatus::CANCELLED->label()
-        );
-    }
-    
-    /**
-     * @testdox 結帳金額超過最大金額
-     * @return void
-     */
-    public function test_exceed_max_allowed_amount(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 結帳金額小於最小金額
-     * @return void
-     */
-    public function test_below_min_allowed_amount(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 訂單包含10種商品
-     * @return void
-     */
-    public function test_order_contains_10_products(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 訂單金額小數點測試
-     * @return void
-     */
-    public function test_order_amount_with_decimal(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 商品名稱包含特殊字符 & emoji
-     * @return void
-     */
-    public function test_product_name_with_special_characters_and_emoji(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 超過時間未結帳就禁止付款
-     * @return void
-     */
-    public function test_payment_forbidden_after_timeout(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 測試環境與正式環境切換
-     * @return void
-     */
-    public function test_switch_between_sandbox_and_live(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 重複付款防護測試
-     * @return void
-     */
-    public function test_duplicate_payment_protection(): void {
-        $this->fail();
-    }
-    
-    /**
-     * @testdox 訂單取消後不能付款
-     * @return void
-     */
-    public function test_payment_not_allowed_after_order_cancelled(): void {
-        $this->fail();
-    }
-    
+
+	/** @var Plugin[] 測試前需要安裝的插件 */
+	protected array $required_plugins = [
+		Plugin::WOOCOMMERCE,
+		Plugin::POWERHOUSE,
+		Plugin::POWER_CHECKOUT,
+	];
+
+	/** @var \J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Abstracts\PaymentGateway|null 測試支付網關 */
+	private PaymentGateway|null $gateway = null;
+
+	/** 每個測試方法執行前執行一次 */
+	public function set_up(): void {
+
+		// 呼叫 hook 註冊 API
+		parent::set_up();
+		$this->gateway = new RedirectGateway();
+		$order         = $this->get_order();
+
+		// 設定訂單付款方式
+		$order->set_payment_method( $this->gateway->id );
+		$order->save();
+	}
+
+	/**
+	 * 取得訂單
+	 *
+	 * @return \WC_Order
+	 */
+	protected function get_order(): \WC_Order {
+		return $this->get_container( Order::class )->get_item();
+	}
+
+	/**
+	 * @testdox 發起結帳請求，成功是否取得跳轉 url
+	 * @return void
+	 * @throws \Exception
+	 */
+	public function test_payment_success(): void {
+		$result = null;
+		// 模擬 API 環境 - 不發請求
+		if ( Api::MOCK === self::$api ) {                // 這邊實例化 $service 看會不會報錯
+			$service  = new ApiClient( $this->gateway, $this->get_order() );
+			$redirect = 'https://pay-sandbox.shoplinepayments.com/checkout/session?sessionToken=BGPGC6M6A4A27OILWBY54WP4J5UDTY3BPE5SSMHPTTORKOPFRM2OWNYQ6C6KM4TFUYFQGWF3EMCDMRP7QHAZ2R3HADADXGYEQUEWJWDCZ32SLPR5EBKBMYGOCOOGZW4FIDKNHXQWAIS7US66XEBCBGZ5FM======--v1';
+			$result   = ProcessResult::SUCCESS->to_array( $redirect );
+		}
+
+		// 對金流測試環境發請求
+		if ( Api::SANDBOX === self::$api ) {
+			// 測試建立 session 並取得 sessionUrl
+			$result = $this->gateway->process_payment( $this->get_order()->get_id() );
+		}
+
+		// 對金流正式環境發請求
+		if ( Api::PROD === self::$api ) {
+			throw new \Exception( '請求正式環境的測試尚未實作' );
+			// TODO: 這邊要發請求到正式環境
+		}
+
+		// 且 redirect 有值，且為 url
+		$this->assertIsArray( $result, '結果應該是陣列' );
+		$this->assertEquals(
+			ProcessResult::SUCCESS->value,
+			$result['result'],
+			'結果應該是成功'
+		);
+		$this->assertIsString( $result['redirect'], '結果應該有 redirect 鍵' );
+	}
+
+	/**
+	 * @testdox 發起結帳請求，失敗是否印出錯誤
+	 * @return void
+	 * @throws \Exception
+	 */
+	public function test_payment_failed(): void {
+		// 測試建立 session 並取得 sessionUrl 故意找不到訂單
+		// API 還沒發出去就會 throw error 了
+		$result = $this->gateway->process_payment( 0 );
+
+		$this->assertIsArray( $result, '結果應該是陣列' );
+		$this->assertEquals( ProcessResult::FAILED->value, $result['result'], '結果應該是失敗' );
+		// 且沒有 redirect 鍵
+		$this->assertArrayNotHasKey( 'redirect', $result, '結果應該沒有 redirect 鍵' );
+
+		// 結帳頁印出錯誤
+		$notices = \WC()->session->get( 'wc_notices' );
+		$this->assertNotEmpty( $notices, '結帳頁應該有錯誤訊息' );
+	}
+
+
+	/**
+	 * @testdox SLP webhook 通知用戶【付款成功】後，訂單轉為【處理中】
+	 * @return void
+	 * @throws  \Exception
+	 */
+	public function test_order_status_process_after_payment_success(): void {
+		$requester = new Requester( 'POST', '/power-checkout/slp/webhook' );
+		$res       = $requester->set_body( __DIR__ . '/json/webhook.trade.succeeded.json' )->get_response();
+
+		$order        = $this->get_order();
+		$order_status = $order->get_status();
+		$this->assertContains(
+			$order_status,
+			[ OrderStatus::PROCESSING->value, OrderStatus::COMPLETED->value ],
+								'訂單狀態應為 ' . OrderStatus::PROCESSING->label(
+								) . ' 或 ' . OrderStatus::COMPLETED->label()
+			);
+	}
+
+	/**
+	 * @testdox SLP webhook 通知用戶【付款失敗】後，訂單轉為【等待付款中】
+	 * @return void
+	 */
+	public function test_order_status_pending_after_payment_failed(): void {
+		$requester = new Requester( 'POST', '/power-checkout/slp/webhook' );
+		$requester->set_body( __DIR__ . '/json/webhook.session.expired.json' )->get_response();
+		$order        = $this->get_order();
+		$order_status = $order->get_status();
+		$this->assertEquals(
+			OrderStatus::PENDING->value,
+			$order_status,
+			'訂單狀態應為 ' . OrderStatus::PENDING->label()
+		);
+	}
+
+	/**
+	 * @testdox SLP webhook 通知用戶【逾時未付】後，訂單轉為【取消】
+	 * @return void
+	 * @throws \Exception
+	 */
+	public function test_order_status_cancelled_after_payment_expired(): void {
+
+		$requester = new Requester( 'POST', '/power-checkout/slp/webhook' );
+		$requester->set_body( __DIR__ . '/json/webhook.session.expired.json' )->get_response();
+		$order        = $this->get_order();
+		$order_status = $order->get_status();
+		$this->assertEquals(
+			OrderStatus::CANCELLED->value,
+			$order_status,
+			'訂單狀態應為 ' . OrderStatus::CANCELLED->label()
+		);
+	}
+
+	/**
+	 * @testdox 結帳金額超過最大金額
+	 * @return void
+	 */
+	public function test_exceed_max_allowed_amount(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 結帳金額小於最小金額
+	 * @return void
+	 */
+	public function test_below_min_allowed_amount(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 訂單包含10種商品
+	 * @return void
+	 */
+	public function test_order_contains_10_products(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 訂單金額小數點測試
+	 * @return void
+	 */
+	public function test_order_amount_with_decimal(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 商品名稱包含特殊字符 & emoji
+	 * @return void
+	 */
+	public function test_product_name_with_special_characters_and_emoji(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 超過時間未結帳就禁止付款
+	 * @return void
+	 */
+	public function test_payment_forbidden_after_timeout(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 測試環境與正式環境切換
+	 * @return void
+	 */
+	public function test_switch_between_sandbox_and_live(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 重複付款防護測試
+	 * @return void
+	 */
+	public function test_duplicate_payment_protection(): void {
+		$this->fail();
+	}
+
+	/**
+	 * @testdox 訂單取消後不能付款
+	 * @return void
+	 */
+	public function test_payment_not_allowed_after_order_cancelled(): void {
+		$this->fail();
+	}
 }

@@ -14,6 +14,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Http\WebHook;
 use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 
+/** 建立退款請求 DTO */
 class CreateRefundDTO extends DTO {
 	use ReferenceOrderIdTrait;
 	use TradeOrderIdTrait;
@@ -26,7 +27,7 @@ class CreateRefundDTO extends DTO {
 	/** @var string (256) Event Webhook callback 的 URL */
 	public string $callbackUrl;
 
-	/** @var array<string, string|int> 原始資料 */
+	/** @var array<string> 原始資料 */
 	protected array $require_properties = [
 		'referenceOrderId',
 		'tradeOrderId',

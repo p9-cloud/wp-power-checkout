@@ -8,6 +8,7 @@ use J7\PowerCheckout\Domains\Invoice\Shared\Helpers\MetaKeys;
 use J7\WpUtils\Classes\DTO;
 
 
+/** 作廢發票請求參數 DTO */
 final class CancelInvoiceParamsDTO extends DTO {
 
 	/** @var array<int,\WC_Order> $orders 訂單 array  */
@@ -19,11 +20,9 @@ final class CancelInvoiceParamsDTO extends DTO {
 	 * @return array<string,mixed>
 	 */
 	public function to_array(): array {
+		/** @var array<string, mixed> $invoice_number_array */
 		$invoice_number_array = [];
 		foreach ($this->orders as $order) {
-			if (!$order instanceof \WC_Order) {
-				continue;
-			}
 			$params         = new MetaKeys( $order );
 			$invoice_number = $params->get_issued_data('invoice_number');
 			if (!$invoice_number) {
@@ -38,6 +37,8 @@ final class CancelInvoiceParamsDTO extends DTO {
 			throw new \Exception( "{$order_ids} 找不到發票號碼" );
 		}
 
-		return $invoice_number_array;
+		/** @var array<string, mixed> $result */
+		$result = $invoice_number_array;
+		return $result;
 	}
 }

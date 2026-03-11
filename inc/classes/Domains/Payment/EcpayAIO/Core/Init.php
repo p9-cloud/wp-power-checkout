@@ -25,7 +25,12 @@ final class Init {
 		\add_action( 'woocommerce_blocks_payment_method_type_registration', [ __CLASS__, 'register_checkout_blocks' ] );
 	}
 
-	/** 添加付款方式 @param array<string> $methods 付款方式 @return array<string> */
+	/**
+	 * 添加付款方式
+	 *
+	 * @param array<int, string> $methods 付款方式
+	 * @return array<int, string>
+	 */
 	public static function add_method( array $methods ): array {
 		$methods[] = Atm::class;
 		$methods[] = Barcode::class;
@@ -59,7 +64,9 @@ final class Init {
 			if ( !$gateway ) {
 				continue;
 			}
-			$payment_method_registry->register( new BlocksIntegration( $gateway ) );
+			if ( $gateway instanceof \J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway ) {
+				$payment_method_registry->register( new BlocksIntegration( $gateway ) );
+			}
 		}
 	}
 }

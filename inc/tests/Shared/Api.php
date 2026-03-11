@@ -9,7 +9,7 @@ namespace J7\PowerCheckoutTests\Shared;
  * @example composer test -- --API=live
  */
 enum Api : string {
-    case MOCK = 'mock';       // 模擬 API
-    case PROD = 'prod';       // 正式 API
-    case SANDBOX = 'sandbox'; // 沙盒 API
+	case MOCK    = 'mock';       // 模擬 API
+	case PROD    = 'prod';       // 正式 API
+	case SANDBOX = 'sandbox'; // 沙盒 API
 }

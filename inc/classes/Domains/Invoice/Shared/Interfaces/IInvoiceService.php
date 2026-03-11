@@ -10,7 +10,7 @@ interface IInvoiceService {
 	 * @param bool $with_default 是否有預設值，還是只拿 DB 值
 	 * false = 只拿 db, true = 會給預設值
 	 *
-	 * @return array 取得設定
+	 * @return array<string, mixed> 取得設定
 	 */
 	public static function get_settings( bool $with_default = true ): array;
 
@@ -19,7 +19,7 @@ interface IInvoiceService {
 	 *
 	 * @param \WC_Order|int $order_or_id 訂單
 	 *
-	 * @return array{code:int, message:string, data:array} API 資料
+	 * @return array<string, mixed> API 資料
 	 */
 	public function issue( \WC_Order|int $order_or_id ): array;
 
@@ -28,7 +28,7 @@ interface IInvoiceService {
 	 *
 	 * @param \WC_Order|int $order_or_id 訂單
 	 *
-	 * @return array{code:int, message:string, data:array} API 資料
+	 * @return array<string, mixed> API 資料
 	 */
 	public function cancel( \WC_Order|int $order_or_id ): array;
 

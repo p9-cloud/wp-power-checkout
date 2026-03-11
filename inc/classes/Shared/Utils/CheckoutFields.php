@@ -39,16 +39,22 @@ final class CheckoutFields {
 
 	/** @return array<CheckoutFieldDTO> 取得所有註冊的欄位 */
 	private static function get_fields(): array {
-		return \apply_filters( self::HOOK_NAME, self::$fields  );
+		$result = \apply_filters( self::HOOK_NAME, self::$fields  );
+		/** @var array<CheckoutFieldDTO> $fields */
+		$fields = \is_array($result) ? $result : [];
+		return $fields;
 	}
 
 	/**
-	 * @param array $fields 欄位
+	 * @param array<string, mixed> $fields 欄位
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public static function render_invoice_field( array $fields ): array {
 		foreach (self::get_fields() as $field) {
+			if ( ! isset( $fields[ $field->field_type ] ) || ! \is_array( $fields[ $field->field_type ] ) ) {
+				$fields[ $field->field_type ] = [];
+			}
 			$fields[ $field->field_type ][ $field->id ] = $field->to_traditional_checkout_args();
 		}
 		return $fields;
@@ -77,7 +83,7 @@ final class CheckoutFields {
 			if ( !isset( $_POST[ $field->id ] ) ) { // phpcs:ignore
 				continue;
 			}
-			$value = $_POST[ $field->id ]; // phpcs:ignore
+			$value = (string) $_POST[ $field->id ]; // phpcs:ignore
 			$order->update_meta_data( $field->id, $value );
 		}
 

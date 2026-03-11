@@ -42,7 +42,7 @@ final class Requester {
 	 *
 	 *  @param string               $endpoint 端點
 	 *  @param array<string, mixed> $request_body 請求參數
-	 *  @return array Response Body
+	 *  @return array<string, mixed> Response Body
 	 *  @throws \Exception 發生錯誤時拋出
 	 */
 	public function post( string $endpoint, array $request_body = [] ): array {
@@ -50,10 +50,14 @@ final class Requester {
 
 		$request_header = RequestHeader::create( $this->order )->to_array();
 
+		$json_body = \wp_json_encode( $request_body );
+		if (!\is_string($json_body)) {
+			throw new \Exception('Failed to encode request body');
+		}
 		$response = \wp_remote_post(
 			$api_url,
 			[
-				'body'     => \wp_json_encode( $request_body ),
+				'body'     => $json_body,
 				'headers'  => $request_header,
 				'blocking' => true,
 				'timeout'  => self::TIMEOUT,
@@ -78,7 +82,7 @@ final class Requester {
 				);
 
 		if ( isset( $response_body['code'] ) ) {
-			$error = ErrorCode::tryFrom($response_body['code'] );
+			$error = ErrorCode::tryFrom( (string) $response_body['code'] );
 			$this->gateway->logger(
 				"❌ {$this->gateway->title} {$endpoint} 請求失敗 #{$this->order->get_id()}",
 				'error',

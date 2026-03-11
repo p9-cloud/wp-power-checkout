@@ -16,10 +16,10 @@ final class PaymentInstrument extends DTO {
 	/** @var string 付款工具 ID*/
 	public string $instrumentId;
 
-	/** @var Enums\PaymentMethod::CREDITCARD::value 付款工具類型*/
+	/** @var string 付款工具類型*/
 	public string $instrumentType;
 
-	/** @var Enums\InstrumentStatus::value 付款工具狀態*/
+	/** @var string 付款工具狀態*/
 	public string $instrumentStatus;
 
 	/** @var InstrumentCard 付款工具資訊*/
@@ -38,8 +38,10 @@ final class PaymentInstrument extends DTO {
 		if ( isset( $args['instrumentCard'] ) ) {
 			$args['instrumentCard'] = InstrumentCard::parse( $args['instrumentCard'] );
 		}
-		if ( isset( $args['billing'] ) ) {
-			$args['billing'] = Billing::create( $args['billing'] );
+		if ( isset( $args['billing'] ) && \is_array( $args['billing'] ) ) {
+			/** @var array<string, mixed> $billing_data */
+			$billing_data = $args['billing'];
+			$args['billing'] = Billing::create( $billing_data );
 		}
 		return new self( $args );
 	}
@@ -49,7 +51,7 @@ final class PaymentInstrument extends DTO {
 	 *
 	 * @throws \Exception 如果驗證失敗
 	 */
-    protected function validate(): void {
+	protected function validate(): void {
 		if ( isset( $this->instrumentType ) && Enums\PaymentMethod::CREDITCARD->value !== $this->instrumentType ) {
 			throw new \Exception( '付款工具類型不合法' );
 		}

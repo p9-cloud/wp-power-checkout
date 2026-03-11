@@ -22,7 +22,7 @@ final class SettingApiService extends ApiBase {
 	/** @var string REST API namespace */
 	protected $namespace = 'power-checkout/v1';
 
-	/** @var array 已註冊的 API 列表 */
+	/** @var array<array{endpoint: string, method: string, permission_callback?: callable|null, callback?: callable|null, schema?: array<string, mixed>|null}> 已註冊的 API 列表 */
 	protected $apis = [
 		[
 			'endpoint' => 'settings',
@@ -113,7 +113,10 @@ final class SettingApiService extends ApiBase {
 		if (!$provider) {
 			throw new \Exception("Can't find Provider with provider_id: {$provider_id}");
 		}
-		$settings = $provider->get_settings();
+		/** @var callable $get_settings */
+		$get_settings = [ $provider, 'get_settings' ];
+		/** @var array<string, mixed> $settings */
+		$settings = \call_user_func($get_settings);
 
 		return new \WP_REST_Response(
 			[

@@ -18,8 +18,8 @@ final class OrderUtils {
 		return \class_exists(\Automattic\WooCommerce\Utilities\OrderUtil::class) && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
 	}
 
-	/** @return bool Is Order Detail Page */
-	public static function is_order_detail( $hook = '' ): bool {
+	/** @param string $hook 頁面 hook @return bool Is Order Detail Page */
+	public static function is_order_detail( string $hook = '' ): bool {
 
 		if (!$hook && isset($_GET['page'])) { // phpcs:ignore
 			return 'wc-orders' === $_GET['page'] && isset($_GET['id']); // phpcs:ignore
@@ -36,8 +36,8 @@ final class OrderUtils {
 		return false;
 	}
 
-	/** @return bool Is Order List Page */
-	public static function is_order_list( $hook = '' ): bool {
+	/** @param string $hook 頁面 hook @return bool Is Order List Page */
+	public static function is_order_list( string $hook = '' ): bool {
 		if ('woocommerce_page_wc-orders' === $hook) {
 			return true;
 		}
@@ -49,8 +49,8 @@ final class OrderUtils {
 		return false;
 	}
 
-	/** @return int|null 在 Order detail page 取得 order id */
-	public static function get_order_id( $hook = '' ): int|null {
+	/** @param string $hook 頁面 hook @return int|null 在 Order detail page 取得 order id */
+	public static function get_order_id( string $hook = '' ): int|null {
 		if (!self::is_order_detail($hook)) {
 			return null;
 		}
@@ -60,9 +60,9 @@ final class OrderUtils {
 	/**
 	 * 取得完整地址
 	 *
-	 * @param \WC_Order $order 訂單
-	 * @param array     $override_args 覆寫參數
-	 * @param string    $separator 分隔符號
+	 * @param \WC_Order             $order 訂單
+	 * @param array<string, string> $override_args 覆寫參數
+	 * @param string                $separator 分隔符號
 	 *
 	 * @return string
 	 */

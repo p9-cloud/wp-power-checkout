@@ -22,6 +22,6 @@ final class Member extends DTO {
 	/** @var int *建立時間（時間戳） */
 	public int $createTime;
 
-	/** @var array 必填屬性 */
+	/** @var array<string> 必填屬性 */
 	protected array $require_properties = [ 'customerId', 'referenceCustomerId', 'createTime' ];
 }

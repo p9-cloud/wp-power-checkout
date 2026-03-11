@@ -16,7 +16,7 @@ final class Customer extends DTO {
 	/** @var string (64) *顧客唯一標識，需為唯一值 */
 	public string $referenceCustomerId;
 
-	/** @var CustomerType::value (1) *顧客類型，0 為遊客，1 為登入會員 */
+	/** @var string (1) *顧客類型，0 為遊客，1 為登入會員 */
 	public string $type;
 
 	/** @var PersonalInfo *收件人資訊 */

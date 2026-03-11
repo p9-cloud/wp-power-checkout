@@ -31,7 +31,7 @@ final class Session extends DTO {
 	/** @var Components\PaymentDetail[] 付款方式詳細資訊 */
 	public array|null $paymentDetails = null;
 
-	/** @var array 必填屬性 */
+	/** @var array<string> 必填屬性 */
 	protected array $require_properties = [
 		'sessionId',
 		'referenceId',
@@ -44,21 +44,10 @@ final class Session extends DTO {
 	/**
 	 * 組成變數的主要邏輯可以寫在裡面
 	 *
-	 * @param array{
-	 *    sessionId: string,
-	 *    referenceId: string,
-	 *    status: ResponseStatus::value,
-	 *    sessionUrl: string,
-	 *    createTime: int,
-	 *    amount: array{
-	 *      currency: string,
-	 *      value: int,
-	 *    },
-	 *    paymentDetails: array<array<string, mixed>>,
-	 * } $args
+	 * @param array<string, mixed> $args 參數
 	 */
 	public static function create( array $args ): self {
-		if ( isset( $args['paymentDetails'] ) ) {
+		if ( isset( $args['paymentDetails'] ) && \is_array( $args['paymentDetails'] ) ) {
 			$args['paymentDetails'] = array_map( fn( $payment_detail ) => Components\PaymentDetail::parse( $payment_detail ), $args['paymentDetails'] );
 		}
 		$args['amount'] = Components\Amount::parse( $args['amount'] );

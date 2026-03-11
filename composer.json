@@ -36,6 +36,7 @@
 	"require-dev": {
 		"dealerdirect/phpcodesniffer-composer-installer": "@stable",
 		"php-stubs/woocommerce-stubs": "@stable",
+		"php-stubs/woocommerce-subscriptions-stubs": "^8.4",
 		"php-stubs/wordpress-stubs": "@stable",
 		"phpcompatibility/php-compatibility": "@stable",
 		"phpstan/extension-installer": "@stable",

@@ -23,7 +23,7 @@ final class CreditInstallment extends Credit {
 
 		/** @var mixed $saved_number_of_periods */
 		$saved_number_of_periods = $this->get_option( 'number_of_periods', [] );
-		$this->number_of_periods = is_array( $saved_number_of_periods ) ? $saved_number_of_periods : [];
+		$this->number_of_periods = is_array( $saved_number_of_periods ) ? array_map(static fn( $v ): int => (int) $v, $saved_number_of_periods) : [];
 		parent::__construct();
 		$this->title = __( 'ECPayAIO Credit (installment)', 'power_checkout' );
 	}

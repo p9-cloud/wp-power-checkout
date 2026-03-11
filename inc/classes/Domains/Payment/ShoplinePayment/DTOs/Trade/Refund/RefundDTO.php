@@ -15,6 +15,11 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\ResponseStatus
 use J7\WpUtils\Classes\DTO;
 use J7\WpUtils\Classes\WP;
 
+/**
+ * 退款資料 DTO
+ *
+ * @phpstan-consistent-constructor
+ */
 class RefundDTO extends DTO {
 	use RefundOrderIdTrait;
 	use ReferenceOrderIdTrait;
@@ -23,7 +28,7 @@ class RefundDTO extends DTO {
 	use StatusTrait;
 	use RefundMsgTrait;
 
-	/** @var array 必填屬性 */
+	/** @var array<string> 必填屬性 */
 	protected array $require_properties = [
 		'refundOrderId',
 		'referenceOrderId',
@@ -35,7 +40,7 @@ class RefundDTO extends DTO {
 	/**
 	 * 創建實例
 	 *
-	 * @param array $args 參數
+	 * @param array<string, mixed> $args 參數
 	 * @return static 實例
 	 */
 	public static function create( array $args ): static {
@@ -52,7 +57,7 @@ class RefundDTO extends DTO {
 		ResponseStatus::from( $this->status );
 	}
 
-	/** @return array 人類可讀文字 */
+	/** @return array<string, mixed> 人類可讀文字 */
 	public function to_human_array(): array {
 		return \array_merge(
 			$this->amount->to_human_array(),

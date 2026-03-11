@@ -35,7 +35,9 @@ final class ProviderRegister {
 			}
 
 			if ( \method_exists( $gateway_service, 'init' ) ) {
-				\call_user_func( [ $gateway_service, 'init' ] );
+				/** @var callable $callable */
+				$callable = [ $gateway_service, 'init' ];
+				\call_user_func( $callable );
 			}
 		}
 	}
@@ -49,7 +51,12 @@ final class ProviderRegister {
 		}
 	}
 
-	/** 添加付款方式 @param array<string> $methods 付款方式 @return array<string> */
+	/**
+	 * 添加付款方式
+	 *
+	 * @param array<int|string, string> $methods 付款方式
+	 * @return array<int|string, string>
+	 */
 	public static function add_method( array $methods ): array {
 		foreach ( self::$gateway_services as $gateway_service ) {
 			$methods[] = $gateway_service;
@@ -57,7 +64,12 @@ final class ProviderRegister {
 		return $methods;
 	}
 
-	/** 修改預設的退款原因 */
+	/**
+	 * 修改預設的退款原因
+	 *
+	 * @param int                  $refund_id 退款ID
+	 * @param array<string, mixed> $args      參數
+	 */
     public static function default_refund_reason( int $refund_id, array $args ): void { // phpcs:ignore
 		/** @var \WC_Order_Refund $refund */
 		$refund = \wc_get_order( $refund_id );
@@ -76,8 +88,10 @@ final class ProviderRegister {
 
 	/**
 	 * 退款的 script
+	 *
+	 * @param string $hook 頁面 hook
 	 */
-	public static function refund_script( $hook ): void {
+	public static function refund_script( string $hook ): void {
 		if ( !OrderUtils::is_order_detail( $hook ) ) {
 			return;
 		}
@@ -101,9 +115,9 @@ final class ProviderRegister {
 				],
 				'order'   => [
 					'id'                      => (string) $order->get_id(),
-					'total'                   => \wc_price( $order->get_total() ),
+					'total'                   => \wc_price( (float) $order->get_total() ),
 					'remaining_refund_amount' => \wc_price(
-						$order->get_remaining_refund_amount()
+						(float) $order->get_remaining_refund_amount()
 					),
 				],
 
@@ -122,9 +136,15 @@ final class ProviderRegister {
 	 */
 	public static function add_order_note__manual_refund( int $order_id, int $refund_id ): void {
 		$refund = \wc_get_order( $refund_id );
+		if ( !$refund instanceof \WC_Order_Refund ) {
+			return;
+		}
 		if ( !$refund->get_refunded_payment() ) {
-			$order         = \wc_get_order( $order_id );
-			$refund_amount = \wc_price( $refund->get_amount() );
+			$order = \wc_get_order( $order_id );
+			if ( !$order instanceof \WC_Order ) {
+				return;
+			}
+			$refund_amount = \wc_price( (float) $refund->get_amount() );
 			$order->add_order_note( "手動退款 {$refund_amount} 元" );
 		}
 	}

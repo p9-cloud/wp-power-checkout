@@ -27,6 +27,9 @@
         <exclude name="Squiz.Commenting.FileComment.MissingPackageTag"/>
         <exclude name="WordPress.PHP.DevelopmentFunctions.error_log_print_r"/>
     </rule>
+    <rule ref="WordPress-Docs">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
     <rule ref="WordPress-Extra"/>
     <rule ref="WordPress">
         <exclude name="WordPress.Files.FileName"/>
@@ -54,6 +57,9 @@
         <exclude name="WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase"/>
         <exclude name="WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase"/>
         <exclude name="PHPCompatibility.Variables.ForbiddenThisUseContexts.OutsideObjectContext"/>
+        <exclude name="WordPress.NamingConventions.ValidHookName.UseUnderscores"/>
+        <exclude name="WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase"/>
+        <exclude name="Squiz.Commenting.FunctionCommentThrowTag.Missing"/>
     </rule>
 
     <exclude-pattern>.idea/*</exclude-pattern>
@@ -61,6 +67,7 @@
     <exclude-pattern>./release/*</exclude-pattern>
     <exclude-pattern>*/node_modules/*</exclude-pattern>
     <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/vendor_prefixed/*</exclude-pattern>
     <rule ref="Generic.WhiteSpace.ScopeIndent">
         <properties>
             <property name="indent" value="4"/>

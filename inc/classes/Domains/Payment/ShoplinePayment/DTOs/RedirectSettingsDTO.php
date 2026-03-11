@@ -70,7 +70,7 @@ final class RedirectSettingsDTO extends DTO implements IGatewaySettings {
 					'ChaileaseBNPL',
 	];
 
-	/** @var array<string, array<string>> $paymentMethodOptions */
+	/** @var array<string, array<string, list<string>>> $paymentMethodOptions */
 	public array $paymentMethodOptions = [
 		'CreditCard' => [
 			'installmentCounts' => [ '0', '3', '6', '9', '12', '18', '24' ],
@@ -123,11 +123,8 @@ final class RedirectSettingsDTO extends DTO implements IGatewaySettings {
 		}
 
 		if ( !empty( $this->signKey ) ) {
-			$this->signKey = \mb_convert_encoding($this->signKey, 'UTF-8', 'auto');
-		}
-
-		if ( !empty( $this->signKey ) ) {
-			$this->signKey = \mb_convert_encoding($this->signKey, 'UTF-8', 'auto');
+			$converted = \mb_convert_encoding($this->signKey, 'UTF-8', 'auto');
+			$this->signKey = \is_string($converted) ? $converted : $this->signKey;
 		}
 	}
 

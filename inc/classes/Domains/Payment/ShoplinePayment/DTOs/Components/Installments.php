@@ -20,7 +20,7 @@ final class Installments extends DTO {
 	/** @var string 每期金額，台幣金額*100，譬如1元為100(選填) (12) */
 	public string $installPay;
 
-	/** 轉換成人類可讀的陣列 */
+	/** @return array<string, string> 轉換成人類可讀的陣列 */
 	public function to_human_array(): array {
 		return [
 			'分期期數' => "{$this->count}期",

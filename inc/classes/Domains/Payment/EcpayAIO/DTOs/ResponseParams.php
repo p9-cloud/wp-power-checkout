@@ -92,8 +92,8 @@ final class ResponseParams extends DTO {
 
 	// ----- ▼ 私有屬性 ----- //
 
-	/** @var array<string, string|int> 原始資料 */
-	protected array $dto_data = [];
+	/** @var array<string, mixed>|null 原始資料 */
+	protected array|null $dto_data = [];
 
 
 	/**

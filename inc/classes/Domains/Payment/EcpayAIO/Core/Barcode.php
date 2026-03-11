@@ -136,25 +136,25 @@ final class Barcode extends PaymentGateway {
 	<tr>
 		<td><?php echo __( 'Barcode 1', 'ry-woocommerce-tools' ); ?>
 		</td>
-		<td><?php echo $order->get_meta( '_ecpay_barcode_Barcode1' ); ?>
+		<td><?php echo esc_html( (string) $order->get_meta( '_ecpay_barcode_Barcode1' ) ); ?>
 		</td>
 	</tr>
 	<tr>
 		<td><?php echo __( 'Barcode 2', 'ry-woocommerce-tools' ); ?>
 		</td>
-		<td><?php echo $order->get_meta( '_ecpay_barcode_Barcode2' ); ?>
+		<td><?php echo esc_html( (string) $order->get_meta( '_ecpay_barcode_Barcode2' ) ); ?>
 		</td>
 	</tr>
 	<tr>
 		<td><?php echo __( 'Barcode 3', 'ry-woocommerce-tools' ); ?>
 		</td>
-		<td><?php echo $order->get_meta( '_ecpay_barcode_Barcode3' ); ?>
+		<td><?php echo esc_html( (string) $order->get_meta( '_ecpay_barcode_Barcode3' ) ); ?>
 		</td>
 	</tr>
 	<tr>
 		<td><?php echo __( 'Payment deadline', 'ry-woocommerce-tools' ); ?>
 		</td>
-		<td><?php echo $order->get_meta( '_ecpay_barcode_ExpireDate' ); ?>
+		<td><?php echo esc_html( (string) $order->get_meta( '_ecpay_barcode_ExpireDate' ) ); ?>
 		</td>
 	</tr>
 </table>

@@ -8,6 +8,7 @@ use J7\PowerCheckout\Domains\Invoice\Shared\Enums\EIndividual;
 use J7\PowerCheckout\Domains\Invoice\Shared\Enums\EInvoiceType;
 use J7\WpUtils\Classes\DTO;
 
+/** 電子發票參數 DTO */
 final class InvoiceParams extends DTO {
 	/** @var string 電子發票服務提供商 id */
 	public string $provider = '';
@@ -27,13 +28,17 @@ final class InvoiceParams extends DTO {
 	/** @var string 捐贈碼 */
 	public string $donateCode = '';
 
-	/** 取得實例 */
+	/**
+	 * 取得實例
+	 *
+	 * @param array<string, mixed> $args 參數
+	 */
 	public static function create( array $args ): self {
 		if (isset($args['invoiceType'])) {
-			$args['invoiceType'] = EInvoiceType::from($args['invoiceType']);
+			$args['invoiceType'] = EInvoiceType::from( (string) $args['invoiceType']);
 		}
 		if (isset($args['individual'])) {
-			$args['individual'] = EIndividual::from($args['individual']);
+			$args['individual'] = EIndividual::from( (string) $args['individual']);
 		}
 
 		return new self($args);

@@ -44,12 +44,12 @@ final class SessionDTO extends DTO {
 	/**
 	 * 創建實例
 	 *
-	 * @param array $args 參數
+	 * @param array<string, mixed> $args 參數
 	 * @return self 實例
 	 */
 	public static function create( array $args ): self {
 		$args['amount'] = Components\Amount::parse( $args['amount'] );
-		if ( isset( $args['paymentDetails'] ) ) {
+		if ( isset( $args['paymentDetails'] ) && \is_array( $args['paymentDetails'] ) ) {
 			$args['paymentDetails'] = array_map( fn( $payment_detail ) => Components\PaymentDetail::parse( $payment_detail ), $args['paymentDetails'] );
 		}
 

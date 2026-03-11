@@ -9,6 +9,7 @@ use J7\PowerCheckout\Shared\DTOs\BaseSettingsDTO;
 use J7\PowerCheckout\Shared\Enums\Mode;
 use J7\PowerCheckout\Shared\Utils\ProviderUtils;
 
+/** 光貿電子發票設定 DTO */
 final class AmegoSettingsDTO extends BaseSettingsDTO {
 	// region 基礎通用欄位
 
@@ -48,6 +49,7 @@ final class AmegoSettingsDTO extends BaseSettingsDTO {
 	/** @return self 取得單例實例 */
 	public static function instance(): self {
 		if (!self::$instance) {
+			/** @var array<string, mixed>|null $args */
 			$args           = ProviderUtils::get_option( AmegoProvider::ID);
 			self::$instance = new self($args);
 		}

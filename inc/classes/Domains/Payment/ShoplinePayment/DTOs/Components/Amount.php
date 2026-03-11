@@ -17,7 +17,7 @@ final class Amount extends DTO {
 	/** @var int (14) *金額，台幣傳金額*100，譬如1元傳入100 */
 	public int $value;
 
-	/** @var Currency::value 幣種，目前僅支援 TWD */
+	/** @var string 幣種，目前僅支援 TWD */
 	public string $currency = 'TWD';
 
 	/** @var array<string> 必填屬性 */
@@ -51,7 +51,7 @@ final class Amount extends DTO {
 		}
 	}
 
-	/** 轉換成人類可讀的陣列 */
+	/** @return array<string, string> 轉換成人類可讀的陣列 */
 	public function to_human_array(): array {
 		return [
 			'金額' => "{$this->to_human_value()} {$this->currency}",

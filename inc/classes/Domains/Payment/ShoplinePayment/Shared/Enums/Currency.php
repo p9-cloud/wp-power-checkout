@@ -9,7 +9,7 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * 目前僅支援 TWD
  */
 enum Currency: string {
-	/** @var string 台幣 */
+	/** 台幣 */
 	case TWD = 'TWD';
 
 	/**

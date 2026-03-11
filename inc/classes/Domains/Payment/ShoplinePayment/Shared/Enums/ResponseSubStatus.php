@@ -9,24 +9,24 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  */
 enum ResponseSubStatus: string {
 
-	/** @var string 已授權 */
+	/** 已授權 */
 	case AUTHORIZED = 'AUTHORIZED';
-	/** @var string 人工審核中 */
+	/** 人工審核中 */
 	case PENDING_REVIEW = 'PENDING_REVIEW';
-	/** @var string 風控審核中 */
+	/** 風控審核中 */
 	case RISK_PENDING = 'RISK_PENDING';
-	/** @var string 風控拒絕 */
+	/** 風控拒絕 */
 	case RISK_REJECTED = 'RISK_REJECTED';
-	/** @var string 授權失敗 */
+	/** 授權失敗 */
 	case AUTHORIZATION_FAILED = 'AUTHORIZATION_FAILED';
 
-	/** @var string 授權失敗 */
+	/** 授權失敗 */
 	case CONFIRM_FAILED = 'CONFIRM_FAILED';
 
-	/** @var string 請款失敗 */
+	/** 請款失敗 */
 	case CAPTURE_FAILED = 'CAPTURE_FAILED';
 
-	/** @var string 交易失敗 */
+	/** 交易失敗 */
 	case FAILED = 'FAILED';
 
 	/**
@@ -44,7 +44,6 @@ enum ResponseSubStatus: string {
 			self::CONFIRM_FAILED => '授權失敗',
 			self::CAPTURE_FAILED => '請款失敗',
 			self::FAILED => '交易失敗',
-			default => $this->value,
 		};
 	}
 }

@@ -19,8 +19,6 @@ use J7\PowerCheckout\Domains\Invoice\Amego\Services\AmegoProvider;
  *  */
 final class Requester {
 
-	private const API_VERSION = '1.0.0';
-
 	private const API_URL = 'https://invoice-api.amego.tw'; // 目前測試或正式都請用同一個 API 網址
 
 	private const TIMEOUT = 60;
@@ -98,6 +96,7 @@ final class Requester {
 				5,
 				$this->order
 			);
+			return null;
 		}
 	}
 }

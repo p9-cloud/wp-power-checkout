@@ -9,6 +9,7 @@ use J7\PowerCheckout\Shared\Enums\Mode;
 use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 
+/** 發票商品明細項目 DTO */
 final class ProductItemDTO extends DTO {
 
 	/** @var string 品名，不可超過256字 */

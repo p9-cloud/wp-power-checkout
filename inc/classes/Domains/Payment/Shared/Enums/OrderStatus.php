@@ -13,28 +13,28 @@ namespace J7\PowerCheckout\Domains\Payment\Shared\Enums;
  *  */
 enum OrderStatus: string {
 
-	/** @var string 等待付款中 */
+	/** 等待付款中 */
 	case PENDING = 'pending';
 
-	/** @var string 處理中(已付款) */
+	/** 處理中(已付款) */
 	case PROCESSING = 'processing';
 
-	/** @var string 保留 (爭議款，系統轉換中) */
+	/** 保留 (爭議款，系統轉換中) */
 	case ON_HOLD = 'on-hold';
 
-	/** @var string 已完成(已付款+已出貨) */
+	/** 已完成(已付款+已出貨) */
 	case COMPLETED = 'completed';
 
-	/** @var string 已取消 */
+	/** 已取消 */
 	case CANCELLED = 'cancelled';
 
-	/** @var string 已退款 */
+	/** 已退款 */
 	case REFUNDED = 'refunded';
 
-	/** @var string 失敗 */
+	/** 失敗 */
 	case FAILED = 'failed';
 
-	/** @var string 草稿 */
+	/** 草稿 */
 	case CHECKOUT_DRAFT = 'checkout-draft';
 
 	/**

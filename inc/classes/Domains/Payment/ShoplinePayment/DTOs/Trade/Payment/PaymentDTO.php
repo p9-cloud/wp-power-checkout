@@ -25,6 +25,7 @@ use J7\WpUtils\Classes\WP;
 /**
  * Shopline Payment 跳轉式支付 SessionDTO
  *
+ * @phpstan-consistent-constructor
  * @see https://docs.shoplinepayments.com/api/trade/query/
  */
 class PaymentDTO extends DTO {
@@ -50,15 +51,21 @@ class PaymentDTO extends DTO {
 	/**
 	 * 創建實例
 	 *
-	 * @param array $args 參數
+	 * @param array<string, mixed> $args 參數
 	 * @return static 實例
 	 * @throws \Exception DTO 實例化失敗
 	 */
 	public static function create( array $args ): static {
-		$args['order']   = Webhook\Order::create( $args['order'] ?? [] );
-		$args['payment'] = Webhook\Payment::create( $args['payment'] ?? [] );
+		/** @var array<string, mixed> $order_data */
+		$order_data      = $args['order'] ?? [];
+		/** @var array<string, mixed> $payment_data */
+		$payment_data    = $args['payment'] ?? [];
+		$args['order']   = Webhook\Order::create( $order_data );
+		$args['payment'] = Webhook\Payment::create( $payment_data );
 		if (isset($args['paymentMsg']) && \is_array($args['paymentMsg'])) {
-			$args['paymentMsg'] = new Components\ErrorMessage( $args['paymentMsg'] );
+			/** @var array<string, mixed> $payment_msg_data */
+			$payment_msg_data = $args['paymentMsg'];
+			$args['paymentMsg'] = new Components\ErrorMessage( $payment_msg_data );
 		}
 		return new static( $args );
 	}

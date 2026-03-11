@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingReturnTypeInspection */
 
-
 declare ( strict_types = 1 );
 
 namespace J7\PowerCheckout\Domains\Payment\Shared\Abstracts;
@@ -31,7 +30,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 
 	// endregion
 
-	/** @var array<GatewaySupport::value> 支援的特性預設支援退款、tokenization、區塊結帳 */
+	/** @var array<string> 支援的特性預設支援退款、tokenization、區塊結帳 */
 	public $supports = [
 		'products',
 		'refunds',
@@ -65,24 +64,24 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 		$settings = $this->get_settings();
 
 		$this->init_settings();
-		$this->icon              = $settings['icon'];
-		$this->title             = $settings['title'];
-		$this->description       = $settings['description'];
-		$this->order_button_text = $settings['order_button_text'] ?: \sprintf(
+		$this->icon              = (string) ( $settings['icon'] ?? '' );
+		$this->title             = (string) ( $settings['title'] ?? '' );
+		$this->description       = (string) ( $settings['description'] ?? '' );
+		$this->order_button_text = (string) ( $settings['order_button_text'] ?? '' ) ?: \sprintf(
 			\__( '使用 %s 付款', 'power_checkout' ),
-			$this->title
+			(string) ( $settings['title'] ?? '' )
 		);
 
-		if (isset($settings->expire_min)) {
-			$this->expire_min = $settings->expire_min;
+		if (isset($settings['expire_min'])) {
+			$this->expire_min = (int) $settings['expire_min'];
 		}
 
-		if (isset($settings->min_amount)) {
-			$this->min_amount = $settings->min_amount;
+		if (isset($settings['min_amount'])) {
+			$this->min_amount = (int) $settings['min_amount'];
 		}
 
-		if (isset($settings->max_amount)) {
-			$this->max_amount = $settings->max_amount;
+		if (isset($settings['max_amount'])) {
+			$this->max_amount = (int) $settings['max_amount'];
 		}
 
 		// 儲存欄位
@@ -110,7 +109,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	/**
 	 * @param bool $with_default 是否有預設值，還是只拿 DB 值
 	 *
-	 * @return array 取得設定
+	 * @return array<string, mixed> 取得設定
 	 */
 	abstract public static function get_settings( bool $with_default = true ): array;
 
@@ -147,10 +146,6 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 			return false;
 		}
 
-		if ( !\WC()->cart ) {
-			return false;
-		}
-
 		$total = $this->get_order_total();
 		if ( $total <= 0 ) {
 			return false;
@@ -177,7 +172,7 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	 *
 	 * @param int $order_id 訂單 ID
 	 *
-	 * @return array{result: ProcessResult::SUCCESS | ProcessResult::FAILED, redirect?: string}
+	 * @return array{result: string, redirect?: string}
 	 * @throws \Exception 如果訂單不存在
 	 * @see WC_Payment_Gateway::process_payment
 	 */
@@ -381,5 +376,5 @@ abstract class AbstractPaymentGateway extends \WC_Payment_Gateway {
 	}
 
 	/** 初始化 */
-	public static function init() {}
+	public static function init(): void {}
 }

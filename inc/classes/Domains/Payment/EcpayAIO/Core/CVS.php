@@ -118,18 +118,18 @@ final class CVS extends PaymentGateway {
 	<tr>
 		<td><?php echo __( 'Bank', 'power_checkout' ); ?>
 		</td>
-		<td><?php echo _x( $order->get_meta( '_ecpay_atm_BankCode' ), 'Bank code', 'power_checkout' ); ?> (<?php echo $order->get_meta( '_ecpay_atm_BankCode' ); ?>)</td>
+		<td><?php echo esc_html( (string) $order->get_meta( '_ecpay_atm_BankCode' ) ); ?> (<?php echo esc_html( (string) $order->get_meta( '_ecpay_atm_BankCode' ) ); ?>)</td>
 	</tr>
 	<tr>
 		<td><?php echo __( 'ATM Bank account', 'power_checkout' ); ?>
 		</td>
-		<td><?php echo $order->get_meta( '_ecpay_atm_vAccount' ); ?>
+		<td><?php echo esc_html( (string) $order->get_meta( '_ecpay_atm_vAccount' ) ); ?>
 		</td>
 	</tr>
 	<tr>
 		<td><?php echo __( 'Payment deadline', 'power_checkout' ); ?>
 		</td>
-		<td><?php echo $order->get_meta( '_ecpay_atm_ExpireDate' ); ?>
+		<td><?php echo esc_html( (string) $order->get_meta( '_ecpay_atm_ExpireDate' ) ); ?>
 		</td>
 	</tr>
 </table>

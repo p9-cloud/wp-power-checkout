@@ -12,7 +12,7 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * CreditCard
  *  */
 final class CreditCard extends DTO {
-	/** @var Enums\CreditCardType::value *卡類型 */
+	/** @var string *卡類型 */
 	public string $type;
 
 	/** @var string *卡號前六位 */
@@ -45,7 +45,7 @@ final class CreditCard extends DTO {
 	}
 
 
-	/** 轉換成人類可讀的陣列 */
+	/** @return array<string, string> 轉換成人類可讀的陣列 */
 	public function to_human_array(): array {
 		$issuer_mapper = [
 			'TAISHIN INTERNATIONAL BANK' => '台新銀行',

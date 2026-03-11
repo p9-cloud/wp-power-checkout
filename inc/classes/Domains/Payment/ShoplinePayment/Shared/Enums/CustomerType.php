@@ -9,9 +9,9 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * '0' | '1' (1) *顧客類型，0 為遊客，1 為登入會員
  */
 enum CustomerType: string {
-	/** @var string 遊客 */
+	/** 遊客 */
 	case GUEST = '0';
-	/** @var string 登入會員 */
+	/** 登入會員 */
 	case MEMBER = '1';
 
 	/**

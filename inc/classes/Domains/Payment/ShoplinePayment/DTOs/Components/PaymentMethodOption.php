@@ -24,7 +24,13 @@ final class PaymentMethodOption extends DTO {
 	/** @var int 設定付款方式的逾時時間，單位：min。為了顧客體驗，建議帶入4320（即3天）。若不帶入則默認為 4320（即3天）。若不滿足整數天，則會向上取整 */
 	public int $paymentExpireTime;
 
-	/** 創建實例 */
+	/**
+	 * 創建實例
+	 *
+	 * @param array<string, mixed> $args 參數
+	 * @param string               $type 類型
+	 * @return self
+	 */
 	public static function create( array $args, string $type ): self {
 		$args['type'] = $type;
 		return new self($args);
@@ -58,10 +64,12 @@ final class PaymentMethodOption extends DTO {
 	}
 
 
-	/** 改寫 to_array */
+	/** @return array<string, mixed> 改寫 to_array */
 	public function to_array(): array {
 		$array = parent::to_array();
-		\sort($array['installmentCounts']);
+		if (\is_array($array['installmentCounts'])) {
+			\sort($array['installmentCounts']);
+		}
 		unset($array['type']);
 		return $array;
 	}

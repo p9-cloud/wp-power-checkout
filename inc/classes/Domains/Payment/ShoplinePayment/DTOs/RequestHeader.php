@@ -63,6 +63,7 @@ final class RequestHeader extends DTO {
 
 	/** @return array<string, string> 轉換為陣列 */
 	public function to_array(): array {
+		/** @var array<string, string> $to_array */
 		$to_array                 = parent::to_array();
 		$to_array['Content-Type'] = $this->ContentType;
 		unset($to_array['ContentType']);

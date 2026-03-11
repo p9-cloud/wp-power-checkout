@@ -15,6 +15,18 @@ abstract class PaymentGateway extends AbstractPaymentGateway {
 	/** @var string 付款 icon */
 	public $icon = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMTjo4Y8SMNcXz0ZSm5Bg92fqHYYTICRTwPw&s';
 
+	/** @var int 付款截止日 */
+	public int $expire_date = 3;
+
+	/**
+	 * @param bool $with_default 是否有預設值，還是只拿 DB 值
+	 *
+	 * @return array<string, mixed> 取得設定
+	 */
+	public static function get_settings( bool $with_default = true ): array {
+		return [];
+	}
+
 
 	/**
 	 * 提交表單

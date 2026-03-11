@@ -34,7 +34,7 @@ final class Instrument extends DTO {
 	 *  */
 	public string|null $passthrough;
 
-	/** @var array 必填屬性 */
+	/** @var array<string> 必填屬性 */
 	protected array $require_properties = [
 		'customerId',
 		'referenceCustomerId',
@@ -47,7 +47,9 @@ final class Instrument extends DTO {
 	 * @param array<string, mixed> $args 原始資料
 	 */
 	public static function create( array $args ): self {
-		$args['paymentInstrument'] = Webhook\PaymentInstrument::create( $args['paymentInstrument'] );
+		/** @var array<string, mixed> $pi_data */
+		$pi_data = $args['paymentInstrument'];
+		$args['paymentInstrument'] = Webhook\PaymentInstrument::create( $pi_data );
 		return new self( $args );
 	}
 }

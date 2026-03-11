@@ -347,6 +347,6 @@ enum ErrorCode: string {
 			self::E_43011->value               => \__('超出身分資訊核驗次數', 'power_checkout'),
 		];
 
-		return $mapper[ $this->value ] ?? $this->value;
+		return $mapper[ $this->value ];
 	}
 }

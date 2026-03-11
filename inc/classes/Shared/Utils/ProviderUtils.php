@@ -50,7 +50,7 @@ abstract class ProviderUtils {
 	/**
 	 * @param string $provider_id Payment Gateway ID
 	 *
-	 * @return mixed 值
+	 * @return bool 是否成功
 	 */
 	public static function toggle( string $provider_id ): bool {
 		$from_value = self::get_option( $provider_id, 'enabled' );
@@ -78,9 +78,9 @@ abstract class ProviderUtils {
 	/**
 	 * 更新設定
 	 *
-	 * @param string       $provider_id   Payment Gateway ID
-	 * @param string|array $key_or_values 設定 key 或 values
-	 * @param mixed        $value         值
+	 * @param string                      $provider_id   Payment Gateway ID
+	 * @param string|array<string, mixed> $key_or_values 設定 key 或 values
+	 * @param mixed                       $value         值
 	 *
 	 * @return bool 儲存成功
 	 */
@@ -88,7 +88,7 @@ abstract class ProviderUtils {
 		$settings_array = \get_option( self::get_option_name( $provider_id ), [] );
 		$settings_array = \is_array( $settings_array) ? $settings_array : [];
 
-		if (\is_array( $key_or_values ) && !$value) {
+		if (\is_array( $key_or_values )) {
 			$values = $key_or_values;
 			return \update_option( self::get_option_name( $provider_id ), \wp_parse_args( $values, $settings_array) );
 		}

@@ -163,8 +163,8 @@ final class RequestParams extends DTO {
 	 *  */
 	public string $ClientRedirectURL;
 
-	/** @var array<string, string|int> 原始資料 */
-	protected array $dto_data = [];
+	/** @var array<string, mixed>|null 原始資料 */
+	protected array|null $dto_data = [];
 
 	/**
 	 * 組成變數的主要邏輯可以寫在裡面

@@ -33,7 +33,7 @@ final class CreateSessionDTO extends DTO {
 	/** @var string *固定填：regular */
 	public string $mode = 'regular';
 
-	/** @var array<PaymentMethod::value> *設定 SessionURL 上可以使用的付款方式，陣列的順序為實際在 Session URL 顯示的付款方式順序。傳入範例：["CreditCard", "VirtualAccount", "JKOPay", "ApplePay", "LinePay", "ChaileaseBNPL"] */
+	/** @var array<string> *設定 SessionURL 上可以使用的付款方式，陣列的順序為實際在 Session URL 顯示的付款方式順序。傳入範例：["CreditCard", "VirtualAccount", "JKOPay", "ApplePay", "LinePay", "ChaileaseBNPL"] */
 	public array $allowPaymentMethodList;
 
 	/** @var Components\PaymentMethodOptions 設定不同付款方式的資訊。Applepay 和 LINE Pay 暫不支援設定 */
@@ -51,7 +51,7 @@ final class CreateSessionDTO extends DTO {
 	/** @var Components\Client 客戶端資訊 */
 	public Components\Client $client;
 
-	/** @var array<string, string|int> 原始資料 */
+	/** @var array<string> 原始資料 */
 	protected array $require_properties = [
 		'referenceId',
 		'amount',

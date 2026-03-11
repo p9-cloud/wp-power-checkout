@@ -152,7 +152,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 			}
 
 			// 儲存 payment_identity
-			$order_params->update_payment_identity( $trade_order_id);
+			$order_params->update_payment_identity( (string) $trade_order_id);
 		} catch (\Throwable $e) {
 			$this->logger( "❌ {$this->title} 發生錯誤<br>{$e->getMessage()}", 'error', [], 5 );
 		}
@@ -216,7 +216,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	/**
 	 * @param bool $with_default 是否有預設值，還是只拿 DB 值
 	 *
-	 * @return array 取得設定
+	 * @return array<string, mixed> 取得設定
 	 */
 	public static function get_settings( bool $with_default = true ): array {
 		if (!$with_default) {
@@ -226,7 +226,8 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 				unset($default_array[ $key ]);
 			}
 
-			return \wp_parse_args( ProviderUtils::get_option( self::ID), $default_array);
+			$option = ProviderUtils::get_option( self::ID);
+			return \wp_parse_args( \is_array($option) ? $option : [], $default_array);
 		}
 		return RedirectSettingsDTO::instance()->to_array();
 	}
@@ -257,7 +258,9 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 			$payment_dto = PaymentDTO::from_order($order);
 			return $payment_dto->get_payment_method()->can_refund( $order, (float) $amount);
 		} catch (\Throwable $e) {
-			$this->logger("❌ #{$order_id} 退款失敗： {$e->getMessage()}", 'error', $e->getTrace(), 5, false );
+			/** @var array<string, mixed> $trace */
+			$trace = $e->getTrace();
+			$this->logger("❌ #{$order_id} 退款失敗： {$e->getMessage()}", 'error', $trace, 5, false );
 			return new \WP_Error( 'refund_failed', '❌ 退款失敗，詳情請查閱 log 紀錄' );
 		}
 	}
@@ -333,7 +336,7 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 	// endregion
 
 	/** 初始化 */
-	public static function init() {
+	public static function init(): void {
 		WebHook::instance();
 		// 添加付款方式
 
@@ -361,7 +364,9 @@ final class RedirectGateway extends PaymentGateway implements IGateway {
 					return;
 				}
 
-				$payment_method_registry->register(new BlocksIntegration($gateway));
+				if ($gateway instanceof \J7\PowerCheckout\Domains\Payment\Shared\Abstracts\AbstractPaymentGateway) {
+					$payment_method_registry->register(new BlocksIntegration($gateway));
+				}
 			}
 		);
 	}

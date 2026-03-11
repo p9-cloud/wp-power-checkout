@@ -8,13 +8,13 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * InstrumentStatus 付款工具狀態
  */
 enum InstrumentStatus: string {
-	/** @var string 建立 */
+	/** 建立 */
 	case CREATED = 'CREATED';
-	/** @var string 綁定成功 */
+	/** 綁定成功 */
 	case SUCCEEDED = 'SUCCEEDED';
-	/** @var string 解綁 */
+	/** 解綁 */
 	case DISABLED = 'DISABLED';
-	/** @var string 綁定失敗 */
+	/** 綁定失敗 */
 	case FAILED = 'FAILED';
 
 	/** @return string 取得標籤 */

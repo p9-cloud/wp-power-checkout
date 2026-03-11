@@ -32,7 +32,7 @@ final class CheckoutFieldDTO extends DTO {
 	/** @var bool 是否必填 */
 	public bool $required = false;
 
-	/** @var array CSS類名 */
+	/** @var array<string> CSS類名 */
 	public array $class_name = [ 'form-row-wide' ];
 
 	/** @var int 優先級 */
@@ -54,7 +54,7 @@ final class CheckoutFieldDTO extends DTO {
 
 
 	/**
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public function to_traditional_checkout_args(): array {
 		$array = $this->to_array();
@@ -66,7 +66,7 @@ final class CheckoutFieldDTO extends DTO {
 	}
 
 	/**
-	 * @return array
+	 * @return array<string, mixed>
 	 * @see https://developer.woocommerce.com/docs/block-development/tutorials/how-to-additional-checkout-fields-guide/#text-fields
 	 */
 	public function to_block_checkout_args(): array {
@@ -76,7 +76,7 @@ final class CheckoutFieldDTO extends DTO {
 		unset($array['class_name']);
 		unset($array['placeholder']);
 		// id 必須帶上斜線 namespace power-checkout/field-id 否則無法使用
-		$array['id'] = Plugin::$kebab . '/' . $array['id'];
+		$array['id'] = Plugin::$kebab . '/' . (string) $array['id'];
 		return $array;
 	}
 }

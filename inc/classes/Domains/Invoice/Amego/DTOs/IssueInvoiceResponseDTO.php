@@ -19,9 +19,10 @@ use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 
 
+/** 開立發票回應 DTO */
 final class IssueInvoiceResponseDTO extends DTO {
 
-	/** @var string 代表正確 其他代碼請參考錯誤代碼 https://invoice.amego.tw/info_detail?mid=71 */
+	/** @var int 代表正確 其他代碼請參考錯誤代碼 https://invoice.amego.tw/info_detail?mid=71 */
 	public int $code;
 
 	/** @var string 錯誤訊息 */

@@ -9,13 +9,13 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * 目前僅支援 TW, CN, HK
  */
 enum Country: string {
-	/** @var string 台灣 */
+	/** 台灣 */
 	case TW = 'TW';
 
-	/** @var string 中國 */
+	/** 中國 */
 	case CN = 'CN';
 
-	/** @var string 香港 */
+	/** 香港 */
 	case HK = 'HK';
 
 	/**

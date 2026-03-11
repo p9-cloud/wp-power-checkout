@@ -8,21 +8,21 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * Shopline Payment 跳轉式支付 Response Status
  */
 enum ResponseStatus: string {
-	/** @var string 建立 */
+	/** 建立 */
 	case CREATED = 'CREATED';
-	/** @var string 顧客處理中 */
+	/** 顧客處理中 */
 	case CUSTOMER_ACTION = 'CUSTOMER_ACTION';
-	/** @var string 內部處理中 */
+	/** 內部處理中 */
 	case PROCESSING = 'PROCESSING';
-	/** @var string 處理中 */
+	/** 處理中 */
 	case PENDING = 'PENDING';
-	/** @var string 成功 */
+	/** 成功 */
 	case SUCCEEDED = 'SUCCEEDED';
-	/** @var string 已逾期 */
+	/** 已逾期 */
 	case EXPIRED = 'EXPIRED';
-	/** @var string 失敗 */
+	/** 失敗 */
 	case FAILED = 'FAILED';
-	/** @var string 已取消 */
+	/** 已取消 */
 	case CANCELLED = 'CANCELLED';
 
 	/** @return string 取得狀態的標籤 */
@@ -36,7 +36,6 @@ enum ResponseStatus: string {
 			self::FAILED => '失敗',
 			self::CANCELLED => '已取消',
 			self::EXPIRED => '已過期',
-			default => $this->value,
 		};
 	}
 

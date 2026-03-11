@@ -4,18 +4,21 @@ parameters:
 		- plugin.php
 		- inc/
 	ignoreErrors:
-		- '#Access to constant .* on an unknown class#'
-		- '#Constant .* not found#'
 		- '#Function .* not found#'
 		- '#Cannot cast mixed to .*#'
 		- '#Using nullsafe method call on non-nullable type .*#'
+		- '#Call to static method .* on an unknown class J7\\PowerCheckout\\Domains\\Payment\\EcpayAIO\\Services\\Services#'
+		- '#Call to static method instance\(\) on an unknown class J7\\PowerCheckout\\Domains\\Settings\\DTOs\\SettingsDTO#'
 	excludePaths:
 		- js/*
 		- vendor/*
+		- vendor_prefixed/*
 		- node_modules/*
+		- inc/tests/*
+		- inc/templates/*
 	bootstrapFiles:
 		- vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
 		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
 		- ../powerhouse/plugin.php
 		- ../powerhouse/vendor/autoload.php
-		- ../woocommerce-subscriptions/woocommerce-subscriptions.php
+		- vendor/php-stubs/woocommerce-subscriptions-stubs/woocommerce-subscriptions-stubs.php

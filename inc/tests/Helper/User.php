@@ -11,11 +11,11 @@ use J7\PowerCheckoutTests\Utils\STDOUT;
 /**
  * User class
  */
-class User extends Resource{
+class User extends Resource {
 	use \J7\WpUtils\Traits\SingletonTrait;
-    
-    /** @var string 資源標籤 */
-    protected string $label = '用戶';
+
+	/** @var string 資源標籤 */
+	protected string $label = '用戶';
 
 	/** @var \WP_User[] 測試用戶 */
 	public array $items = [];
@@ -37,10 +37,10 @@ class User extends Resource{
 				'role'       => 'customer',
 			];
 			$args         = \wp_parse_args($args, $default_args);
-            
-            $args['first_name'] .= "_{$i}";
-            $args['user_login'] .= "_{$i}";
-			$args['user_email'] = $args['user_login'] . '@example.com';
+
+			$args['first_name'] .= "_{$i}";
+			$args['user_login'] .= "_{$i}";
+			$args['user_email']  = $args['user_login'] . '@example.com';
 
 			$user_id       = \wp_insert_user($args);
 			$this->items[] = new \WP_User($user_id);
@@ -51,7 +51,7 @@ class User extends Resource{
 
 		return $this;
 	}
- 
+
 
 	/** 測試結束後 刪除 test 用戶 */
 	public function tear_down(): void {

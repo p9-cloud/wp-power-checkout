@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Invoice\Shared\Services;
 
-use _PHPStan_6597ef616\Nette\Neon\Exception;
 use J7\PowerCheckout\Domains\Invoice\Shared\DTOs\InvoiceParams;
 use J7\PowerCheckout\Domains\Invoice\Shared\Helpers\MetaKeys;
 use J7\PowerCheckout\Domains\Invoice\Shared\Interfaces\IInvoiceService;
@@ -29,12 +28,10 @@ final class InvoiceApiService extends ApiBase {
 	 * @var array<array{
 	 * endpoint:string,
 	 * method:string,
-	 * permission_callback?: callable|null,
-	 * callback?: callable|null,
+	 * permission_callback?: (callable(): mixed)|null,
+	 * callback?: (callable(): mixed)|null,
 	 * schema?: array<string, mixed>|null
 	 * }> $apis APIs
-	 *
-	 * @phpstan-ignore-next-line
 	 * */
 	protected $apis = [
 		[
@@ -55,7 +52,7 @@ final class InvoiceApiService extends ApiBase {
 	 * @return \WP_REST_Response 回應
 	 */
 	public function post_issue_with_id_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$order_id = $request['id'] ?? '';
+		$order_id = (string) ( $request['id'] ?? '' );
 		$args     = $request->get_params();
 
 		[$service, $order] = self::get_service( $order_id, $args );
@@ -72,14 +69,13 @@ final class InvoiceApiService extends ApiBase {
 	 * @return \WP_REST_Response 回應
 	 */
 	public function post_cancel_with_id_callback( \WP_REST_Request $request ): \WP_REST_Response {
-		$order_id    = $request['id'] ?? '';
+		$order_id    = (string) ( $request['id'] ?? '' );
 		$order       = OrderUtils::get_order( $order_id);
 		$provider_id = ( new MetaKeys( $order) )->get_provider_id();
 		$provider    = ProviderUtils::get_provider( $provider_id);
 		if (!$provider instanceof IInvoiceService) {
-			throw new Exception("{$provider_id} 不是 Invoice Service");
+			throw new \Exception("{$provider_id} 不是 Invoice Service");
 		}
-		/** @var IInvoiceService $provider */
 		$result = $provider->cancel( $order );
 		return new \WP_REST_Response( $result, 200 );
 	}
@@ -88,8 +84,8 @@ final class InvoiceApiService extends ApiBase {
 	/**
 	 * 從請求體解析出服務 & 訂單
 	 *
-	 * @param string|int $order_id 訂單號
-	 * @param array      $args API 帶進來的參數
+	 * @param string|int           $order_id 訂單號
+	 * @param array<string, mixed> $args API 帶進來的參數
 	 *
 	 * @return array{0: IInvoiceService, 1: \WC_Order} 服務, 訂單
 	 * @throws \Exception 解析失敗
@@ -103,7 +99,7 @@ final class InvoiceApiService extends ApiBase {
 			throw new \Exception("找不到電子發票服務 id: {$args_dto->provider}，請檢查是否啟用");
 		}
 		if (!$provider instanceof IInvoiceService) {
-			throw new Exception("{$args_dto->provider} 不是 Invoice Service");
+			throw new \Exception("{$args_dto->provider} 不是 Invoice Service");
 		}
 
 		return [ $provider, $order ];

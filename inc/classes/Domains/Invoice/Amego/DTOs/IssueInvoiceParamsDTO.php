@@ -21,6 +21,7 @@ use J7\PowerCheckout\Shared\Utils\OrderUtils;
 use J7\PowerCheckout\Shared\Utils\StrHelper;
 use J7\WpUtils\Classes\DTO;
 
+/** 開立發票請求參數 DTO */
 final class IssueInvoiceParamsDTO extends DTO {
 
 	/** @var string 訂單編號，不可重複，不可超過40字 */
@@ -62,6 +63,7 @@ final class IssueInvoiceParamsDTO extends DTO {
 	/** @var string 捐贈碼 */
 	public string $NPOBAN;
 
+	/** @var string 隨機碼 */
 	public string $RandomNumber;
 
 	/** @var ProductItemDTO[] 商品陣列，最多 9999 筆 */
@@ -127,7 +129,11 @@ final class IssueInvoiceParamsDTO extends DTO {
 		'TotalAmount',
 	];
 
-	/** 取得額外的參數 */
+	/**
+	 * 取得額外的參數
+	 *
+	 * @return array<string, mixed>
+	 */
 	private static function get_additional_args( \WC_Order $order ): array {
 		$params       = new MetaKeys( $order );
 		$issue_params = $params->get_issue_params();
@@ -149,28 +155,26 @@ final class IssueInvoiceParamsDTO extends DTO {
 			];
 		}
 
-		if (EInvoiceType::INDIVIDUAL === $args->invoiceType) {
-			if (EIndividual::CLOUD === $args->individual) {
-				return [
-					'CarrierType' => ECarrierType::AMEGO,
-				];
-			}
+		if (EIndividual::CLOUD === $args->individual) {
+			return [
+				'CarrierType' => ECarrierType::AMEGO,
+			];
+		}
 
-			if (EIndividual::BARCODE === $args->individual) {
-				return [
-					'CarrierType' => ECarrierType::MOBILE,
-					'CarrierId1'  => $args->carrier,
-					'CarrierId2'  => $args->carrier,
-				];
-			}
+		if (EIndividual::BARCODE === $args->individual) {
+			return [
+				'CarrierType' => ECarrierType::MOBILE,
+				'CarrierId1'  => $args->carrier,
+				'CarrierId2'  => $args->carrier,
+			];
+		}
 
-			if (EIndividual::MOICA === $args->individual) {
-				return [
-					'CarrierType' => ECarrierType::MOICA,
-					'CarrierId1'  => $args->moica,
-					'CarrierId2'  => $args->moica,
-				];
-			}
+		if (EIndividual::MOICA === $args->individual) {
+			return [
+				'CarrierType' => ECarrierType::MOICA,
+				'CarrierId1'  => $args->moica,
+				'CarrierId2'  => $args->moica,
+			];
 		}
 
 		return [];
@@ -231,7 +235,6 @@ final class IssueInvoiceParamsDTO extends DTO {
 		$ZeroTaxSalesAmount = 0.0;
 
 		$product_items = [];
-		/** @var \WC_Order_Item_Product|\WC_Order_Item_Fee|\WC_Order_Item_Shipping|\WC_Order_Item_Coupon $item */
 		foreach ( $order->get_items([ 'line_item', 'fee', 'shipping', 'coupon' ]) as $item ) {
 			$is_coupon = $item instanceof \WC_Order_Item_Coupon;
 
@@ -239,11 +242,15 @@ final class IssueInvoiceParamsDTO extends DTO {
 			$Quantity = $item->get_quantity();
 
 			// 取得合計 (結算完折扣、未稅)
-			$total = match ($item::class) {
-				\WC_Order_Item_Coupon::class =>  \round( (float) $item->get_discount()) * -1, // 折扣金額是減價
-				\WC_Order_Item_Product::class =>  \round( (float) $item->get_subtotal()), // 折扣金額是減價
-				default => \round( (float) $item->get_total()),
-			};
+			if ($item instanceof \WC_Order_Item_Coupon) {
+				$total = \round( (float) $item->get_discount()) * -1;
+			} elseif ($item instanceof \WC_Order_Item_Product) {
+				$total = \round( (float) $item->get_subtotal());
+			} elseif ($item instanceof \WC_Order_Item_Fee || $item instanceof \WC_Order_Item_Shipping) {
+				$total = \round( (float) $item->get_total());
+			} else {
+				continue;
+			}
 
 			if (!$total || !$Quantity) {
 				continue;

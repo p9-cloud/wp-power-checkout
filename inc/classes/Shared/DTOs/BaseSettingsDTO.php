@@ -11,6 +11,8 @@ use J7\WpUtils\Classes\DTO;
 
 /**
  * 整合的設定項基類
+ *
+ * @phpstan-consistent-constructor
  */
 class BaseSettingsDTO extends DTO {
 	use EnableTrait;
@@ -52,7 +54,10 @@ class BaseSettingsDTO extends DTO {
 	 * @return static
 	 */
 	public static function create( string $class_name ): static {
-		$settings_array = \call_user_func( [ $class_name , 'get_settings' ]);
+		/** @var callable $callable */
+		$callable = [ $class_name, 'get_settings' ];
+		/** @var array<string, mixed> $settings_array */
+		$settings_array = \call_user_func( $callable );
 		return new static($settings_array);
 	}
 

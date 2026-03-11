@@ -8,15 +8,15 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * Shopline Payment 跳轉式支付 PaymentBehavior
  */
 enum PaymentBehavior: string {
-	/** @var string 一般付款 */
+	/** 一般付款 */
 	case REGULAR = 'Regular';
-	/** @var string 純綁卡 */
+	/** 純綁卡 */
 	case CARD_BIND = 'CardBind';
-	/** @var string 付款並綁卡 */
+	/** 付款並綁卡 */
 	case CARD_BIND_PAYMENT = 'CardBindPayment';
-	/** @var string 快捷付款 */
+	/** 快捷付款 */
 	case QUICK_PAYMENT = 'QuickPayment';
-	/** @var string 定期扣款 */
+	/** 定期扣款 */
 	case RECURRING = 'Recurring';
 
 	/**

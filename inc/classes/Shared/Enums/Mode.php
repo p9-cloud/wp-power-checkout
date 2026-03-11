@@ -8,8 +8,8 @@ namespace J7\PowerCheckout\Shared\Enums;
  * Shopline Payment Mode
  */
 enum Mode: string {
-	/** @var string 測試模式 */
+	/** 測試模式 */
 	case TEST = 'test';
-	/** @var string 正式模式 */
+	/** 正式模式 */
 	case PROD = 'prod';
 }

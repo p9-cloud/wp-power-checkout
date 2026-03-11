@@ -15,7 +15,7 @@ final class Body extends DTO {
 	/** @var string *SLP 事件 ID (35)*/
 	public string $id;
 
-	/** @var EventType::value *SLP 事件類型，如 session.succeeded (32)*/
+	/** @var string *SLP 事件類型，如 session.succeeded (32)*/
 	public string $type;
 
 	/** @var int *通知事件建立時間 (14)*/
@@ -25,7 +25,7 @@ final class Body extends DTO {
 	public DTO $data;
 
 
-	/** @var array 必填屬性 */
+	/** @var array<string> 必填屬性 */
 	protected array $require_properties = [
 		'id',
 		'type',
@@ -36,16 +36,13 @@ final class Body extends DTO {
 	/**
 	 * 組成變數的主要邏輯可以寫在裡面
 	 *
-	 *  @param array{
-	 *    id: string,
-	 *    type: EventType::value,
-	 *    created: int,
-	 *    data: array{string: mixed},
-	 * } $args
+	 * @param array<string, mixed> $args 參數
 	 */
 	public static function create( array $args ): self {
-		$type         = EventType::from($args['type']);
-		$data         = $type->get_manager()->get_dto($args['data']);
+		$type         = EventType::from( (string) $args['type']);
+		/** @var array<string, mixed> $raw_data */
+		$raw_data     = $args['data'] ?? [];
+		$data         = $type->get_manager()->get_dto($raw_data);
 		$args['data'] = $data;
 		return new self($args);
 	}
@@ -61,12 +58,13 @@ final class Body extends DTO {
 	/** @return \WC_Order|null 取得 Webhook 關聯的訂單，只有 Session|Payment 的 EventType 會拿到 Order */
 	public function get_order(): \WC_Order|null {
 		$data = $this->data;
-		if (!isset($data->referenceId)) {
+		if ($data instanceof Session) {
+			$order_id = $data->referenceId;
+		} elseif ($data instanceof Payment) {
+			$order_id = $data->referenceOrderId;
+		} else {
 			return null;
 		}
-
-		/** @var Session|Payment $data */
-		$order_id = $data->referenceId;
 
 		$order = \wc_get_order( $order_id );
 		if (!$order instanceof \WC_Order) {

@@ -36,7 +36,7 @@ final class VirtualAccount extends DTO {
 		'recipientBankCode',
 	];
 
-	/** 轉換成人類可讀的陣列 */
+	/** @return array<string, string> 轉換成人類可讀的陣列 */
 	public function to_human_array(): array {
 		return [
 			'付款期限'       => $this->dueDate,

@@ -1,6 +1,5 @@
 <?php /** @noinspection PhpMissingReturnTypeInspection */
 
-
 declare ( strict_types = 1 );
 
 namespace J7\PowerCheckout\Shared\Abstracts;
@@ -31,7 +30,7 @@ abstract class BaseService {
 	 * @param bool $with_default 是否有預設值，還是只拿 DB 值
 	 * false = 只拿 db, true = 會給預設值
 	 *
-	 * @return array 取得設定
+	 * @return array<string, mixed> 取得設定
 	 */
 	abstract public static function get_settings( bool $with_default = true ): array;
 }

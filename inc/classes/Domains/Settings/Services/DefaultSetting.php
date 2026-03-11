@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace J7\PowerCheckout\Domains\Settings\Services;
 
+/** 預設設定服務 */
 class DefaultSetting {
 
 	/** Register hooks */
@@ -14,6 +15,7 @@ class DefaultSetting {
 	/**
 	 * 修改台灣地址格式
 	 *
+	 * @param array<string, string> $address_formats 地址格式
 	 * @return array<string, string> 國家、地址格式 array
 	 * @see \WC_Countries::get_address_formats
 	 */

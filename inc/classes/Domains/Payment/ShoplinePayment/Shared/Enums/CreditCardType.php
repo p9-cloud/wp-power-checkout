@@ -8,9 +8,9 @@ namespace J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums;
  * CreditCard Type
  */
 enum CreditCardType: string {
-	/** @var string 信用卡 */
+	/** 信用卡 */
 	case CREDIT = 'CREDIT';
-	/** @var string 借記卡 */
+	/** 借記卡 */
 	case DEBIT = 'DEBIT';
 
 	/**

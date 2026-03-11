@@ -8,7 +8,7 @@ use J7\PowerCheckout\Domains\Payment\EcpayAIO\DTOs\ResponseParams;
 use J7\PowerCheckout\Domains\Payment\EcpayAIO\Utils\Base as EcpayUtils;
 use J7\PowerCheckout\Domains\Payment\Shared\Helpers\MetaKeys;
 use J7\Powerhouse\Utils\Base as PowerhouseUtils;
-use J7\PowerCheckout\Vendor\J7\WpUtils\Classes\ApiBase;
+use J7\WpUtils\Classes\ApiBase;
 
 /** Api */
 final class Api extends ApiBase {
@@ -20,7 +20,9 @@ final class Api extends ApiBase {
 	/** @var string $namespace */
 	protected $namespace = 'power-checkout';
 
-	/** @var array{endpoint:string,method:string,permission_callback?: callable|null, callback?: callable|null}[] APIs */
+	/**
+	 * @var array<array{endpoint:string,method:string,permission_callback?: (callable(): mixed)|null, callback?: (callable(): mixed)|null, schema?: array<string, mixed>|null}> APIs
+	 */
 	protected $apis = [
 		[
 			'endpoint' => 'ecpay-aio', // ReturnURL
@@ -36,7 +38,6 @@ final class Api extends ApiBase {
 	 *
 	 * @return \WP_REST_Response
 	 * @throws \Exception 檢查碼不相符、訂單不存在或交易編號不存在
-	 * @phpstan-ignore-next-line
 	 */
 	public function post_ecpay_aio_callback( $request ) { // phpcs:ignore
 		$params = $request->get_body_params();

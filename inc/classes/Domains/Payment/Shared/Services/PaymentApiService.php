@@ -9,13 +9,14 @@ use J7\PowerCheckout\Domains\Payment\Shared\Enums\OrderStatus;
 use J7\WpUtils\Classes\ApiBase;
 use J7\WpUtils\Traits\SingletonTrait;
 
+/** 付款 REST API 服務 */
 class PaymentApiService extends ApiBase {
 	use SingletonTrait;
 
 	/** @var string REST API namespace */
 	protected $namespace = 'power-checkout/v1';
 
-	/** @var array 已註冊的 API 列表 */
+	/** @var array<array{endpoint: string, method: string, permission_callback?: callable|null, callback?: callable|null, schema?: array<string, mixed>|null}> 已註冊的 API 列表 */
 	protected $apis = [
 		[
 			'endpoint' => 'refund',
@@ -55,26 +56,24 @@ class PaymentApiService extends ApiBase {
 			throw new \Exception("訂單 #{$order_id} 已經沒有餘額可退");
 		}
 
-		/** @var AbstractPaymentGateway $gateway */
 		$gateway = \wc_get_payment_gateway_by_order( $order );
 		if (!( $gateway instanceof AbstractPaymentGateway )) {
-			throw new \Exception("{$gateway->id} 不是 AbstractPaymentGateway 的實例");
+			throw new \Exception('Gateway 不是 AbstractPaymentGateway 的實例');
 		}
 
-		if (\method_exists( $gateway, 'handle_payment_gateway_refund')) {
-			$refund = \wc_create_refund(
-				[
-					'amount'   => (float) $remaining_refund_amount,
-					'reason'   => '',
-					'order_id' => $order_id,
-				]
-				);
-			$gateway->handle_payment_gateway_refund( (int) $order_id, $refund->get_id() );
-		} else {
-			$gateway->process_refund( $order_id, (float) $remaining_refund_amount );
+		$int_order_id = (int) $order_id;
+		$refund = \wc_create_refund(
+			[
+				'amount'   => (float) $remaining_refund_amount,
+				'reason'   => '',
+				'order_id' => $int_order_id,
+			]
+			);
+		if ($refund instanceof \WC_Order_Refund) {
+			$gateway->handle_payment_gateway_refund( $int_order_id, $refund->get_id() );
 		}
 
-		$result = $gateway->process_refund( $order_id, (float) $remaining_refund_amount );
+		$result = $gateway->process_refund( $int_order_id, (float) $remaining_refund_amount );
 		if (\is_wp_error($result)) {
 			throw new \Exception($result->get_error_message());
 		}

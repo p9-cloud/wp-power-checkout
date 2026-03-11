@@ -28,7 +28,7 @@ final class PaymentMethodOptions extends DTO {
 	public Option $VirtualAccount;
 
 	/**
-	 * @param array $args
+	 * @param array<string, mixed> $args 參數
 	 *
 	 * @return self
 	 * @throws \Exception DTO 失敗
@@ -36,10 +36,12 @@ final class PaymentMethodOptions extends DTO {
 	public static function create( array $args ): self {
 		$fields = [ 'CreditCard', 'ChaileaseBNPL', 'JKOPay', 'VirtualAccount' ];
 		foreach ($fields as $field) {
-			if ( ! isset( $args[ $field ] ) ) {
+			if ( ! isset( $args[ $field ] ) || ! \is_array( $args[ $field ] ) ) {
 				continue;
 			}
-			$args[ $field ] = Option::create( $args[ $field ], $field );
+			/** @var array<string, mixed> $field_data */
+			$field_data     = $args[ $field ];
+			$args[ $field ] = Option::create( $field_data, $field );
 		}
 
 		return new self( $args );

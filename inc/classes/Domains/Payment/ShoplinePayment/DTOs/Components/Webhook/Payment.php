@@ -54,7 +54,7 @@ final class Payment extends DTO {
 	/** @var PaymentMethodOptions|null 付款方式選項 (32) 選填 */
 	public PaymentMethodOptions|null $paymentMethodOptions = null;
 
-	/** @var array 必填屬性 */
+	/** @var array<string> 必填屬性 */
 	protected array $require_properties = [ 'paymentMethod', 'paymentBehavior', 'paidAmount' ];
 
 	/**
@@ -77,8 +77,10 @@ final class Payment extends DTO {
 		if ( isset( $args['paymentInstrument'] ) ) {
 			$args['paymentInstrument'] = Components\PaymentInstrument::parse( $args['paymentInstrument'] );
 		}
-		if ( isset( $args['paymentMethodOptions'] ) ) {
-			$args['paymentMethodOptions'] = PaymentMethodOptions::create( $args['paymentMethodOptions'] );
+		if ( isset( $args['paymentMethodOptions'] ) && \is_array( $args['paymentMethodOptions'] ) ) {
+			/** @var array<string, mixed> $pmo_data */
+			$pmo_data = $args['paymentMethodOptions'];
+			$args['paymentMethodOptions'] = PaymentMethodOptions::create( $pmo_data );
 		}
 		return new self( $args );
 	}
@@ -94,7 +96,7 @@ final class Payment extends DTO {
 		}
 	}
 
-	/** 轉換成人類可讀的陣列 */
+	/** @return array<string, mixed> 轉換成人類可讀的陣列 */
 	public function to_human_array(): array {
 
 		$base_array = [

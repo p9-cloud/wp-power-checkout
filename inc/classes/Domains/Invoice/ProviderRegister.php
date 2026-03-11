@@ -73,7 +73,11 @@ final class ProviderRegister {
 		if (!\class_exists($class_name)) {
 			return;
 		}
-		ProviderUtils::$container[ $id ] = \call_user_func( [ $class_name, 'instance' ]);
+		/** @var callable $callable */
+		$callable                        = [ $class_name, 'instance' ];
+		/** @var \J7\PowerCheckout\Shared\Abstracts\BaseService $instance */
+		$instance                        = \call_user_func( $callable );
+		ProviderUtils::$container[ $id ] = $instance;
 
 		/** @var IInvoiceService $provider */
 		$provider          = ProviderUtils::$container[ $id ];
@@ -83,7 +87,7 @@ final class ProviderRegister {
 		if (isset($provider_settings['auto_issue_order_statuses']) && \is_array($provider_settings['auto_issue_order_statuses'])) {
 			$auto_issue_order_statuses = $provider_settings['auto_issue_order_statuses'];
 			foreach ($auto_issue_order_statuses as $status_with_prefix) {
-				$status = OrderUtils::strip_prefix( $status_with_prefix);
+				$status = OrderUtils::strip_prefix( (string) $status_with_prefix);
 				\add_action( "woocommerce_order_status_{$status}", [ $provider, 'issue' ] );
 			}
 		}
@@ -91,7 +95,7 @@ final class ProviderRegister {
 		if (isset($provider_settings['auto_cancel_order_statuses']) && \is_array($provider_settings['auto_cancel_order_statuses'])) {
 			$auto_cancel_order_statuses = $provider_settings['auto_cancel_order_statuses'];
 			foreach ($auto_cancel_order_statuses as $status_with_prefix) {
-				$status = OrderUtils::strip_prefix( $status_with_prefix);
+				$status = OrderUtils::strip_prefix( (string) $status_with_prefix);
 				\add_action( "woocommerce_order_status_{$status}", [ $provider, 'cancel' ] );
 			}
 		}
@@ -168,7 +172,15 @@ final class ProviderRegister {
 		SettingTabService::enqueue_vue_app();
 
 		$invoice_providers          = ProviderUtils::get_providers( \array_keys( self::$invoice_providers));
-		$invoice_providers_settings = \array_map( static fn( $p ) => $p::get_settings(), $invoice_providers);
+		$invoice_providers_settings = \array_map(
+			 static function ( $p ): array {
+				if ($p instanceof IInvoiceService) {
+					return $p::get_settings();
+				}
+				return [];
+			 },
+			$invoice_providers
+			);
 		$is_admin                   = \is_admin();
 		// 暴露給前端的資料
 		$data = [
