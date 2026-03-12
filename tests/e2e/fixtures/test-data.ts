@@ -1,5 +1,12 @@
 /**
  * Test Data — power-checkout E2E 測試常數與測試資料
+ *
+ * 此檔案為所有測試的唯一常數來源，涵蓋：
+ * - API 端點
+ * - Provider ID
+ * - 邊界值字串與數字
+ * - 發票類型
+ * - SLP 狀態碼
  */
 
 // ─── Base URL ────────────────────────────────────────────────
@@ -13,7 +20,7 @@ export const EP = {
   SETTINGS_TOGGLE: (id: string) => `power-checkout/v1/settings/${id}/toggle`,
   SETTINGS_UPDATE: (id: string) => `power-checkout/v1/settings/${id}`,
 
-  // Refund
+  // Refund (namespace: power-checkout/v1)
   REFUND: 'power-checkout/v1/refund',
   REFUND_MANUAL: 'power-checkout/v1/refund/manual',
 
@@ -26,9 +33,10 @@ export const EP = {
   // Webhook (namespace: power-checkout/slp)
   WEBHOOK: 'power-checkout/slp/webhook',
 
-  // WooCommerce built-in (for creating test orders)
+  // WooCommerce 內建（建立/操作測試訂單）
   WC_ORDERS: 'wc/v3/orders',
   WC_ORDER: (id: number | string) => `wc/v3/orders/${id}`,
+  WC_ORDER_REFUNDS: (orderId: number | string) => `wc/v3/orders/${orderId}/refunds`,
 } as const
 
 // ─── Known Provider IDs ──────────────────────────────────────
@@ -37,7 +45,7 @@ export const PROVIDERS = {
   AMEGO: 'amego',
 } as const
 
-// ─── Invoice Types ───────────────────────────────────────────
+// ─── Invoice Types（依 spec/features/Invoice）────────────────
 export const INVOICE_TYPE = {
   INDIVIDUAL: 'individual',
   COMPANY: 'company',
@@ -51,17 +59,17 @@ export const INDIVIDUAL_TYPE = {
   PAPER: 'paper',
 } as const
 
-// ─── Payment Methods ─────────────────────────────────────────
-export const PAYMENT_METHODS = [
-  'CreditCard',
-  'VirtualAccount',
-  'JKOPay',
-  'ApplePay',
-  'LinePay',
-  'ChaileaseBNPL',
-] as const
+// ─── Payment Methods（依 spec/entity/erm.dbml）───────────────
+export const PAYMENT_METHODS = {
+  CREDIT_CARD: 'CreditCard',
+  VIRTUAL_ACCOUNT: 'VirtualAccount',   // ATM，不支援退款
+  JKO_PAY: 'JKOPay',
+  APPLE_PAY: 'ApplePay',
+  LINE_PAY: 'LinePay',
+  CHAILEASE: 'ChaileaseBNPL',          // 中租零卡，僅全額退款
+} as const
 
-// ─── SLP Response Statuses ───────────────────────────────────
+// ─── SLP Response Statuses（依 spec/entity/erm.dbml）─────────
 export const SLP_STATUS = {
   CREATED: 'CREATED',
   CUSTOMER_ACTION: 'CUSTOMER_ACTION',
@@ -79,38 +87,81 @@ export const PROVIDER_MODE = {
   PROD: 'prod',
 } as const
 
-// ─── Edge Case Strings ───────────────────────────────────────
+// ─── Order Status（依 WooCommerce 標準）──────────────────────
+export const ORDER_STATUS = {
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  ON_HOLD: 'on-hold',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  REFUNDED: 'refunded',
+  FAILED: 'failed',
+} as const
+
+// ─── Edge Case Strings（邊緣值測試用）───────────────────────
 export const EDGE = {
+  // XSS 注入
   XSS_SCRIPT: '<script>alert("xss")</script>',
   XSS_IMG: '<img src=x onerror=alert(1)>',
   XSS_SVG: '<svg/onload=alert(1)>',
-  SQL_INJECTION_1: "'; DROP TABLE wp_options; --",
-  SQL_INJECTION_2: "1' OR '1'='1",
-  SQL_INJECTION_3: "1; SELECT * FROM wp_users --",
+  XSS_ENCODED: '&lt;script&gt;alert(1)&lt;/script&gt;',
+
+  // SQL Injection
+  SQL_DROP: "'; DROP TABLE wp_options; --",
+  SQL_OR: "1' OR '1'='1",
+  SQL_SELECT: "1; SELECT * FROM wp_users --",
+  SQL_UNION: "1 UNION SELECT * FROM wp_users --",
+
+  // Path traversal
+  PATH_TRAVERSAL: '../../wp-config.php',
+
+  // Unicode 與多語言
   UNICODE_CJK: '測試中文字串',
-  UNICODE_JAPANESE: 'テスト',
-  UNICODE_KOREAN: '테스트',
-  EMOJI: '🎉🚀💰',
+  UNICODE_JAPANESE: 'テスト日本語',
+  UNICODE_KOREAN: '한국어 테스트',
+  RTL_ARABIC: 'مرحبا بالعالم',
+
+  // Emoji
+  EMOJI_SIMPLE: '🎉🚀💰',
   EMOJI_COMPLEX: '👨‍👩‍👧‍👦🏳️‍🌈',
+  EMOJI_PAYMENT: '💳💴🏦',
+
+  // 空值與空白
   EMPTY_STRING: '',
   WHITESPACE_ONLY: '   ',
-  VERY_LONG_STRING: 'A'.repeat(10_000),
+  NEWLINE_ONLY: '\n\r\n',
   NULL_BYTE: 'test\x00null',
+
+  // 超長字串
+  VERY_LONG_STRING: 'A'.repeat(10_000),
+  LONG_UNICODE: '中'.repeat(5_000),
+
+  // 特殊符號
   SPECIAL_CHARS: '!@#$%^&*()_+-=[]{}|;:\'",.<>?/`~',
-  HTML_ENTITIES: '&amp;&lt;&gt;&quot;',
-  NEGATIVE_NUMBER: -1,
+  HTML_ENTITIES: '&amp;&lt;&gt;&quot;&#39;',
+
+  // 數值邊界
   ZERO: 0,
-  FLOAT_NUMBER: 0.001,
-  MAX_INT: 2_147_483_647,
+  NEGATIVE: -1,
+  NEGATIVE_LARGE: -999,
+  FLOAT_TINY: 0.001,
+  FLOAT_HALF: 0.5,
+  MAX_SAFE_INT: Number.MAX_SAFE_INTEGER,
+  MAX_INT32: 2_147_483_647,
   HUGE_NUMBER: 999_999_999_999,
 } as const
 
 // ─── Test Order Constants ────────────────────────────────────
 export const TEST_ORDER = {
   TOTAL: '1000',
+  TOTAL_NUM: 1000,
   STATUS_PROCESSING: 'processing',
   STATUS_PENDING: 'pending',
-  NONEXISTENT_ID: 9999999,
+  NONEXISTENT_ID: 9_999_999,   // 不存在的訂單 ID
+  NEGATIVE_ID: -1,
+  ZERO_ID: 0,
+  FLOAT_ID: 1.5,
+  STRING_ID: 'abc',
 } as const
 
 // ─── Test IDs File ───────────────────────────────────────────
@@ -121,8 +172,16 @@ export const TEST_IDS_FILE = path.resolve(
 )
 
 export interface TestIds {
+  // 基本退款測試訂單（processing 狀態，SLP 付款）
   orderId?: number
+  // 手動退款測試訂單（processing 狀態）
   orderIdForManualRefund?: number
+  // 發票測試訂單（processing 狀態，尚未開立發票）
+  orderIdForInvoice?: number
+  // 已開立發票的訂單（含 _pc_issued_invoice_data meta）
+  orderIdWithInvoice?: number
+  // tradeOrderId（Webhook 測試用，與 orderId 對應）
+  tradeOrderId?: string
   [key: string]: unknown
 }
 

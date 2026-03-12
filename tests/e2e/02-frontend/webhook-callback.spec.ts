@@ -1,14 +1,21 @@
 /**
- * 測試目標：Webhook 回呼與付款回導行為
- * 對應功能：SLP Webhook 接收、付款結果回導 URL、各狀態處理
- * 前置條件：SLP Gateway 已啟用、測試訂單已建立
- * 預期結果：Webhook 端點正確處理各種付款狀態通知
+ * P1 — Webhook 回呼與付款回導 — 前端路徑可達性
  *
- * NOTE: 實際付款流程會導向 SLP 外部頁面，E2E 無法模擬完整流程。
- *       此測試聚焦 webhook 端點的回呼處理與回導 URL 的可達性。
+ * 驗證 Webhook 端點的基本行為與付款回導 URL 的可達性：
+ * - POST /slp/webhook 端點存在（非 404）且不 crash
+ * - 各付款狀態（SUCCEEDED, EXPIRED, FAILED, CANCELLED, PROCESSING）的 Webhook 處理
+ * - 退款 Webhook（refund.succeeded, refund.failed）不 crash
+ * - 未知 eventType 安全忽略
+ * - Webhook 不需要 X-WP-Nonce（公開端點）
+ * - 付款回導頁面（order-received, checkout, view-order）不出現 PHP 錯誤
+ * - Header 邊界值（timestamp=0, 未來時間, 空 sign, 缺 apiVersion）
+ *
+ * 依據：spec/features/Payment/處理Webhook通知.feature
+ * NOTE：此處使用簡單 sign（非 HMAC 計算），因本地環境可能跳過驗簽。
+ *       完整 HMAC 測試請參見 01-admin/webhook.spec.ts。
  */
 import { test, expect } from '@playwright/test'
-import { wpGet, wpPost, type ApiOptions } from '../helpers/api-client.js'
+import { wpGet, type ApiOptions } from '../helpers/api-client.js'
 import { getNonce } from '../helpers/admin-setup.js'
 import {
   BASE_URL,
@@ -28,20 +35,21 @@ test.describe('Webhook 回呼與付款回導', () => {
     const ids = loadTestIds()
     testOrderId = ids.orderId
 
-    // 從測試訂單取得 _pc_payment_identity
+    // 從測試訂單取得 pc_payment_identity（tradeOrderId）
     if (testOrderId) {
       const orderRes = await wpGet(opts, EP.WC_ORDER(testOrderId))
       if (orderRes.status === 200) {
-        const order = orderRes.data as any
-        const pcPaymentIdentity = order.meta_data?.find(
-          (m: any) => m.key === '_pc_payment_identity',
+        const order = orderRes.data as Record<string, unknown>
+        const metaData = order.meta_data as Array<Record<string, unknown>>
+        const pcPaymentIdentity = metaData?.find(
+          (m) => m.key === 'pc_payment_identity',
         )
-        tradeOrderId = pcPaymentIdentity?.value
+        tradeOrderId = pcPaymentIdentity?.value as string | undefined
       }
     }
   })
 
-  // Helper: 送出 webhook 請求
+  // ─── 輔助函式：發送 Webhook（不帶 WP 認證）─────────────
   async function sendWebhook(
     request: ApiOptions['request'],
     payload: Record<string, unknown>,
@@ -51,37 +59,51 @@ test.describe('Webhook 回呼與付款回導', () => {
       headers: {
         'Content-Type': 'application/json',
         timestamp: String(Date.now()),
-        sign: 'e2e_test_sign',
+        sign: 'e2e_test_sign_placeholder',
         apiVersion: 'V1',
         ...headers,
       },
       data: payload,
     })
     const body = await res.json().catch(() => ({}))
-    return { status: res.status(), data: body }
+    return { status: res.status(), data: body as Record<string, unknown> }
   }
 
   // ─── Webhook 端點可達性 ────────────────────────────────
   test.describe('Webhook 端點可達性', () => {
-    test('POST /slp/webhook 端點存在且可連線', async ({ request }) => {
+    test('POST /slp/webhook 端點存在（非 404）且不 crash', async ({ request }) => {
       const res = await sendWebhook(request, {})
-      // 不應回傳 404（端點存在）
       expect(res.status).not.toBe(404)
       expect(res.status).toBeLessThan(600)
     })
 
-    test('GET /slp/webhook → 應回 405 或合理錯誤（只接受 POST）', async ({ request }) => {
+    test('GET /slp/webhook → 405 或其他合理錯誤（非 crash）', async ({ request }) => {
       const res = await request.get(`${BASE_URL}/wp-json/${EP.WEBHOOK}`)
-      // REST API 對未註冊的 GET 會回 404 或 405
+      // WordPress REST API 對未定義 GET 回傳 404/405
+      expect(res.status()).toBeLessThan(600)
+    })
+
+    test('Webhook 不需要 X-WP-Nonce（不應回 401/403）', async ({ request }) => {
+      // 刻意不帶任何 WP 認證 header
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          timestamp: String(Date.now()),
+          sign: 'test_sign',
+          apiVersion: 'V1',
+        },
+        data: { eventType: 'trade.succeeded', data: {} },
+      })
+      expect([401, 403]).not.toContain(res.status())
       expect(res.status()).toBeLessThan(600)
     })
   })
 
-  // ─── 付款成功 Webhook ──────────────────────────────────
-  test.describe('付款狀態 Webhook', () => {
-    test('session.succeeded → 訂單狀態應更新（或安全處理簽章失敗）', async ({ request }) => {
+  // ─── 付款狀態 Webhook ──────────────────────────────────
+  test.describe('付款狀態 Webhook（trade.* 事件）', () => {
+    test('trade.succeeded + SUCCEEDED → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
-        eventType: 'session.succeeded',
+        eventType: 'trade.succeeded',
         data: {
           tradeOrderId: tradeOrderId ?? 'e2e_nonexistent_trade',
           status: SLP_STATUS.SUCCEEDED,
@@ -91,13 +113,12 @@ test.describe('Webhook 回呼與付款回導', () => {
           },
         },
       })
-      // 本地環境可能跳過簽章驗證
       expect(res.status).toBeLessThan(600)
     })
 
-    test('session.expired → 不應 crash', async ({ request }) => {
+    test('trade.succeeded + EXPIRED → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
-        eventType: 'session.expired',
+        eventType: 'trade.succeeded',
         data: {
           tradeOrderId: tradeOrderId ?? 'e2e_nonexistent_trade',
           status: SLP_STATUS.EXPIRED,
@@ -106,9 +127,9 @@ test.describe('Webhook 回呼與付款回導', () => {
       expect(res.status).toBeLessThan(600)
     })
 
-    test('session.failed → 不應 crash', async ({ request }) => {
+    test('trade.succeeded + FAILED → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
-        eventType: 'session.failed',
+        eventType: 'trade.succeeded',
         data: {
           tradeOrderId: tradeOrderId ?? 'e2e_nonexistent_trade',
           status: SLP_STATUS.FAILED,
@@ -117,9 +138,9 @@ test.describe('Webhook 回呼與付款回導', () => {
       expect(res.status).toBeLessThan(600)
     })
 
-    test('session.cancelled → 不應 crash', async ({ request }) => {
+    test('trade.succeeded + CANCELLED → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
-        eventType: 'session.cancelled',
+        eventType: 'trade.succeeded',
         data: {
           tradeOrderId: tradeOrderId ?? 'e2e_nonexistent_trade',
           status: SLP_STATUS.CANCELLED,
@@ -128,9 +149,9 @@ test.describe('Webhook 回呼與付款回導', () => {
       expect(res.status).toBeLessThan(600)
     })
 
-    test('session.processing → 不應 crash', async ({ request }) => {
+    test('trade.succeeded + PROCESSING → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
-        eventType: 'session.processing',
+        eventType: 'trade.succeeded',
         data: {
           tradeOrderId: tradeOrderId ?? 'e2e_nonexistent_trade',
           status: SLP_STATUS.PROCESSING,
@@ -141,7 +162,7 @@ test.describe('Webhook 回呼與付款回導', () => {
   })
 
   // ─── 退款 Webhook ─────────────────────────────────────
-  test.describe('退款 Webhook', () => {
+  test.describe('退款 Webhook（refund.* 事件）', () => {
     test('refund.succeeded → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
         eventType: 'refund.succeeded',
@@ -160,88 +181,74 @@ test.describe('Webhook 回呼與付款回導', () => {
         data: {
           tradeOrderId: tradeOrderId ?? 'e2e_nonexistent_trade',
           status: SLP_STATUS.FAILED,
-          refundDetail: { amount: 500 },
+        },
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('refund 金額為 0 → 不應 crash', async ({ request }) => {
+      const res = await sendWebhook(request, {
+        eventType: 'refund.succeeded',
+        data: {
+          tradeOrderId: tradeOrderId ?? 'e2e_nonexistent_trade',
+          status: SLP_STATUS.SUCCEEDED,
+          refundDetail: { amount: 0 },
         },
       })
       expect(res.status).toBeLessThan(600)
     })
   })
 
-  // ─── 未知事件類型 ──────────────────────────────────────
-  test.describe('未知事件類型', () => {
-    test('未定義的 eventType → 安全忽略', async ({ request }) => {
+  // ─── 未知 / 邊界 eventType ──────────────────────────────
+  test.describe('未知與邊界 eventType', () => {
+    test('未定義的 eventType → 安全忽略，不 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
-        eventType: 'unknown.event.type',
+        eventType: 'unknown.event.type.xyz',
         data: { tradeOrderId: 'e2e_test_unknown' },
       })
       expect(res.status).toBeLessThan(600)
     })
 
-    test('eventType 為空字串 → 安全處理', async ({ request }) => {
+    test('eventType 為空字串 → 安全處理，不 crash', async ({ request }) => {
       const res = await sendWebhook(request, {
         eventType: '',
         data: {},
       })
       expect(res.status).toBeLessThan(600)
     })
-  })
 
-  // ─── 付款回導 URL 可達性 ───────────────────────────────
-  test.describe('付款回導 URL', () => {
-    test('付款成功回導 URL（order-received）不應 PHP 錯誤', async ({ page }) => {
-      test.skip(!testOrderId, '測試訂單未建立')
-
-      // SLP 付款成功後通常會回導到 order-received 頁面
-      const response = await page.goto(
-        `${BASE_URL}/checkout/order-received/${testOrderId}/`,
-      )
-      expect(response?.status()).toBeLessThan(500)
-
-      const bodyText = await page.locator('body').textContent() ?? ''
-      expect(bodyText.toLowerCase()).not.toContain('fatal error')
-    })
-
-    test('付款失敗回導 URL（checkout）不應 PHP 錯誤', async ({ page }) => {
-      // SLP 付款失敗後通常回導到結帳頁
-      const response = await page.goto(`${BASE_URL}/checkout/`)
-      expect(response?.status()).toBeLessThan(500)
-
-      const bodyText = await page.locator('body').textContent() ?? ''
-      expect(bodyText.toLowerCase()).not.toContain('fatal error')
-    })
-
-    test('付款取消回導 URL 不應 PHP 錯誤', async ({ page }) => {
-      test.skip(!testOrderId, '測試訂單未建立')
-
-      // 付款取消通常會導向訂單檢視頁
-      const response = await page.goto(
-        `${BASE_URL}/my-account/view-order/${testOrderId}/`,
-      )
-      // 可能 200 或 302 重定向
-      expect(response?.status()).toBeLessThan(500)
-
-      const bodyText = await page.locator('body').textContent() ?? ''
-      expect(bodyText.toLowerCase()).not.toContain('fatal error')
+    test('payload 為空物件 → 不應 crash', async ({ request }) => {
+      const res = await sendWebhook(request, {})
+      expect(res.status).toBeLessThan(600)
     })
   })
 
-  // ─── Webhook Header 變體 ───────────────────────────────
-  test.describe('Webhook Header 變體', () => {
-    test('timestamp 為字串 "0" → 不應 crash', async ({ request }) => {
+  // ─── Header 邊界值 ─────────────────────────────────────
+  test.describe('Webhook Header 邊界值', () => {
+    test('timestamp 為 "0" → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(
         request,
-        { eventType: 'session.succeeded', data: {} },
+        { eventType: 'trade.succeeded', data: {} },
         { timestamp: '0' },
       )
       expect(res.status).toBeLessThan(600)
     })
 
-    test('timestamp 為未來時間 → 不應 crash', async ({ request }) => {
-      const futureTs = String(Date.now() + 86400000) // 24 hours later
+    test('timestamp 為未來時間（+24h）→ 不應 crash', async ({ request }) => {
+      const futureTs = String(Date.now() + 86_400_000)
       const res = await sendWebhook(
         request,
-        { eventType: 'session.succeeded', data: {} },
+        { eventType: 'trade.succeeded', data: {} },
         { timestamp: futureTs },
+      )
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('timestamp 為非數字字串 → 不應 crash', async ({ request }) => {
+      const res = await sendWebhook(
+        request,
+        { eventType: 'trade.succeeded', data: {} },
+        { timestamp: 'not_a_number' },
       )
       expect(res.status).toBeLessThan(600)
     })
@@ -249,7 +256,7 @@ test.describe('Webhook 回呼與付款回導', () => {
     test('sign 為空字串 → 不應 crash', async ({ request }) => {
       const res = await sendWebhook(
         request,
-        { eventType: 'session.succeeded', data: {} },
+        { eventType: 'trade.succeeded', data: {} },
         { sign: '' },
       )
       expect(res.status).toBeLessThan(600)
@@ -261,10 +268,55 @@ test.describe('Webhook 回呼與付款回導', () => {
           'Content-Type': 'application/json',
           timestamp: String(Date.now()),
           sign: 'test',
+          // 故意不帶 apiVersion
         },
-        data: { eventType: 'session.succeeded', data: {} },
+        data: { eventType: 'trade.succeeded', data: {} },
       })
       expect(res.status()).toBeLessThan(600)
+    })
+
+    test('apiVersion 為 V2 → 繼續處理（warning only）', async ({ request }) => {
+      const res = await sendWebhook(
+        request,
+        { eventType: 'trade.succeeded', data: {} },
+        { apiVersion: 'V2' },
+      )
+      expect(res.status).toBeLessThan(600)
+    })
+  })
+
+  // ─── 付款回導 URL 可達性 ───────────────────────────────
+  test.describe('付款回導 URL 頁面可達性', () => {
+    test('付款成功回導（order-received）不應 PHP 錯誤', async ({ page }) => {
+      test.skip(!testOrderId, '測試訂單未建立')
+
+      const response = await page.goto(
+        `${BASE_URL}/checkout/order-received/${testOrderId}/`,
+      )
+      expect(response?.status()).toBeLessThan(500)
+
+      const bodyText = await page.locator('body').textContent() ?? ''
+      expect(bodyText.toLowerCase()).not.toContain('fatal error')
+    })
+
+    test('付款失敗回導（/checkout/）不應 PHP 錯誤', async ({ page }) => {
+      const response = await page.goto(`${BASE_URL}/checkout/`)
+      expect(response?.status()).toBeLessThan(500)
+
+      const bodyText = await page.locator('body').textContent() ?? ''
+      expect(bodyText.toLowerCase()).not.toContain('fatal error')
+    })
+
+    test('付款取消回導（view-order）不應 PHP 錯誤', async ({ page }) => {
+      test.skip(!testOrderId, '測試訂單未建立')
+
+      const response = await page.goto(
+        `${BASE_URL}/my-account/view-order/${testOrderId}/`,
+      )
+      expect(response?.status()).toBeLessThan(500)
+
+      const bodyText = await page.locator('body').textContent() ?? ''
+      expect(bodyText.toLowerCase()).not.toContain('fatal error')
     })
   })
 })

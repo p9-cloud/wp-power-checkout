@@ -1,11 +1,15 @@
 /**
- * 測試目標：電子發票表單
- * 對應功能：Amego 電子發票系統 — 發票類型選擇（個人/公司/捐贈）、欄位驗證
- * 前置條件：Amego Provider 已啟用
- * 預期結果：發票開立 API 正確處理各類型與欄位組合
+ * P1 — 電子發票表單 — 發票類型與欄位驗證
  *
- * NOTE: 電子發票欄位在 WooCommerce 結帳頁由 JS 動態渲染，
- *       此測試同時涵蓋 API 層的參數驗證與前端頁面的基本渲染。
+ * 驗證 power-checkout 電子發票 API 在各發票類型下的行為：
+ * - 個人：雲端、手機條碼、自然人憑證、紙本
+ * - 公司：統一編號（8 碼）、公司名稱
+ * - 捐贈：捐贈碼
+ * - 欄位驗證：缺少必要欄位、格式錯誤
+ * - 前端：結帳頁發票區域不出現 PHP 錯誤、JS 例外
+ *
+ * 依據：spec/features/Invoice/
+ * NOTE：外部 Amego API 在測試環境不可用，多數測試接受 status < 600 即可。
  */
 import { test, expect } from '@playwright/test'
 import { wpGet, wpPost, type ApiOptions } from '../helpers/api-client.js'
@@ -28,40 +32,54 @@ test.describe('電子發票表單', () => {
     const nonce = getNonce()
     opts = { request, baseURL: BASE_URL, nonce }
     const ids = loadTestIds()
-    testOrderId = ids.orderId
+    testOrderId = ids.orderIdForInvoice
   })
 
   // ─── Amego 設定確認 ────────────────────────────────────
-  test.describe('Amego 設定確認', () => {
-    test('Amego provider 設定應可讀取', async () => {
+  test.describe('Amego Provider 設定', () => {
+    test('Amego provider 設定應可讀取，包含 invoice 與 app_key', async () => {
       const res = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
       expect(res.status).toBe(200)
-      const data = (res.data as any).data ?? res.data
+      const data = ((res.data as Record<string, unknown>).data ?? res.data) as Record<string, unknown>
       expect(data).toHaveProperty('invoice')
       expect(data).toHaveProperty('app_key')
     })
 
-    test('Amego 設定包含 tax_rate', async () => {
+    test('Amego 設定包含 tax_rate 欄位', async () => {
       const res = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
-      const data = (res.data as any).data ?? res.data
+      const data = ((res.data as Record<string, unknown>).data ?? res.data) as Record<string, unknown>
       expect(data).toHaveProperty('tax_rate')
+    })
+
+    test('Amego 設定包含 auto_issue 陣列', async () => {
+      const res = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
+      const data = ((res.data as Record<string, unknown>).data ?? res.data) as Record<string, unknown>
+      expect(data).toHaveProperty('auto_issue')
+      expect(Array.isArray(data.auto_issue)).toBeTruthy()
+    })
+
+    test('Amego 設定包含 auto_cancel 陣列', async () => {
+      const res = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
+      const data = ((res.data as Record<string, unknown>).data ?? res.data) as Record<string, unknown>
+      expect(data).toHaveProperty('auto_cancel')
+      expect(Array.isArray(data.auto_cancel)).toBeTruthy()
     })
   })
 
   // ─── 發票類型：個人 ────────────────────────────────────
   test.describe('發票類型 — 個人 (individual)', () => {
     test('個人雲端發票 → invoiceType=individual, individual=cloud', async () => {
-      test.skip(!testOrderId, '測試訂單未建立')
+      test.skip(!testOrderId, '測試訂單未建立（orderIdForInvoice）')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
         invoiceType: INVOICE_TYPE.INDIVIDUAL,
         individual: INDIVIDUAL_TYPE.CLOUD,
       })
-      // 可能成功（200）或因外部 API 失敗（500），但不應 crash
+      // 外部 Amego API 在測試環境不可用，不應 crash
       expect(res.status).toBeLessThan(600)
     })
 
-    test('個人手機條碼 → invoiceType=individual, individual=barcode', async () => {
+    test('個人手機條碼 → individual=barcode，需 barcode 欄位', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
@@ -72,7 +90,7 @@ test.describe('電子發票表單', () => {
       expect(res.status).toBeLessThan(600)
     })
 
-    test('個人自然人憑證 → invoiceType=individual, individual=moica', async () => {
+    test('個人自然人憑證 → individual=moica，需 moica 欄位', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
@@ -83,7 +101,7 @@ test.describe('電子發票表單', () => {
       expect(res.status).toBeLessThan(600)
     })
 
-    test('個人紙本發票 → invoiceType=individual, individual=paper', async () => {
+    test('個人紙本發票 → individual=paper', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
@@ -92,50 +110,61 @@ test.describe('電子發票表單', () => {
       })
       expect(res.status).toBeLessThan(600)
     })
+
+    test('barcode 不傳 carrier → 不應 crash（缺少 carrier 欄位邊界）', async () => {
+      test.skip(!testOrderId, '測試訂單未建立')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: INVOICE_TYPE.INDIVIDUAL,
+        individual: INDIVIDUAL_TYPE.BARCODE,
+        // 故意不帶 barcode
+      })
+      expect(res.status).toBeLessThan(600)
+    })
   })
 
   // ─── 發票類型：公司 ────────────────────────────────────
   test.describe('發票類型 — 公司 (company)', () => {
-    test('公司發票需統一編號 → invoiceType=company', async () => {
+    test('公司發票需統一編號 → 正常呼叫不應 crash', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
         invoiceType: INVOICE_TYPE.COMPANY,
         companyName: '測試公司股份有限公司',
-        taxId: '12345678',
+        companyId: '12345678',
       })
       expect(res.status).toBeLessThan(600)
     })
 
-    test('公司名稱含特殊字元 → 安全處理', async () => {
+    test('公司名稱含特殊字元 → 安全處理（不應 crash）', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
         invoiceType: INVOICE_TYPE.COMPANY,
         companyName: EDGE.SPECIAL_CHARS,
-        taxId: '12345678',
+        companyId: '12345678',
       })
       expect(res.status).toBeLessThan(600)
     })
 
-    test('公司名稱含 XSS 字串 → 被 sanitize', async () => {
+    test('公司名稱含 XSS 字串 → 被 sanitize，不應 crash', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
         invoiceType: INVOICE_TYPE.COMPANY,
         companyName: EDGE.XSS_SCRIPT,
-        taxId: '12345678',
+        companyId: '12345678',
       })
       expect(res.status).toBeLessThan(600)
     })
 
-    test('統一編號為空 → 不應 crash', async () => {
+    test('統一編號（companyId）為空字串 → 不應 crash', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
         invoiceType: INVOICE_TYPE.COMPANY,
         companyName: '測試公司',
-        taxId: '',
+        companyId: '',
       })
       expect(res.status).toBeLessThan(600)
     })
@@ -146,7 +175,27 @@ test.describe('電子發票表單', () => {
         provider: PROVIDERS.AMEGO,
         invoiceType: INVOICE_TYPE.COMPANY,
         companyName: '測試公司',
-        taxId: 'ABCDEFGH',
+        companyId: 'ABCDEFGH',
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('不傳 companyId（缺少必要欄位）→ 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: INVOICE_TYPE.COMPANY,
+        companyName: '測試公司',
+        // 故意不帶 companyId
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('不傳 companyName 與 companyId → 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: INVOICE_TYPE.COMPANY,
       })
       expect(res.status).toBeLessThan(600)
     })
@@ -154,7 +203,7 @@ test.describe('電子發票表單', () => {
 
   // ─── 發票類型：捐贈 ────────────────────────────────────
   test.describe('發票類型 — 捐贈 (donate)', () => {
-    test('捐贈發票 → invoiceType=donate', async () => {
+    test('捐贈發票 → invoiceType=donate，帶 donateCode', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
@@ -164,7 +213,7 @@ test.describe('電子發票表單', () => {
       expect(res.status).toBeLessThan(600)
     })
 
-    test('捐贈碼為空 → 不應 crash', async () => {
+    test('捐贈碼為空字串 → 不應 crash', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
@@ -173,10 +222,29 @@ test.describe('電子發票表單', () => {
       })
       expect(res.status).toBeLessThan(600)
     })
+
+    test('不傳 donateCode → 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: INVOICE_TYPE.DONATE,
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('donateCode 含 XSS → 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: INVOICE_TYPE.DONATE,
+        donateCode: EDGE.XSS_SCRIPT,
+      })
+      expect(res.status).toBeLessThan(600)
+    })
   })
 
-  // ─── 欄位驗證：缺少必要欄位 ───────────────────────────
-  test.describe('欄位驗證', () => {
+  // ─── 欄位驗證 ──────────────────────────────────────────
+  test.describe('欄位驗證（缺少或無效欄位）', () => {
     test('不傳 invoiceType → 不應 crash', async () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
@@ -189,7 +257,7 @@ test.describe('電子發票表單', () => {
       test.skip(!testOrderId, '測試訂單未建立')
       const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
         provider: PROVIDERS.AMEGO,
-        invoiceType: 'invalid_type',
+        invoiceType: 'invalid_type_xyz',
       })
       expect(res.status).toBeLessThan(600)
     })
@@ -202,26 +270,49 @@ test.describe('電子發票表單', () => {
       })
       expect(res.status).toBeLessThan(600)
     })
+
+    test('不傳 provider → 非 200', async () => {
+      test.skip(!testOrderId, '測試訂單未建立')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        invoiceType: INVOICE_TYPE.INDIVIDUAL,
+        individual: INDIVIDUAL_TYPE.CLOUD,
+      })
+      // provider 為必填，應回傳錯誤
+      expect(res.status).toBeGreaterThanOrEqual(400)
+    })
+
+    test('provider 為不存在的 ID → 500 找不到電子發票服務', async () => {
+      test.skip(!testOrderId, '測試訂單未建立')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: 'nonexistent_invoice_provider',
+        invoiceType: INVOICE_TYPE.INDIVIDUAL,
+        individual: INDIVIDUAL_TYPE.CLOUD,
+      })
+      expect(res.status).toBe(500)
+      const body = res.data as Record<string, unknown>
+      expect(String(body.message ?? '')).toContain('找不到電子發票服務')
+    })
   })
 
-  // ─── 前端：結帳頁發票欄位渲染 ─────────────────────────
-  test.describe('結帳頁發票區域', () => {
+  // ─── 前端：結帳頁發票區域 ──────────────────────────────
+  test.describe('結帳頁發票區域渲染', () => {
     test('結帳頁不應因發票欄位而出現 PHP 錯誤', async ({ page }) => {
       const response = await page.goto(`${BASE_URL}/checkout/`)
       expect(response?.status()).toBeLessThan(500)
 
+      await page.waitForLoadState('domcontentloaded')
       const bodyText = await page.locator('body').textContent() ?? ''
       expect(bodyText.toLowerCase()).not.toContain('fatal error')
+      expect(bodyText.toLowerCase()).not.toContain('parse error')
     })
 
-    test('結帳頁 JS 不應有未捕獲例外', async ({ page }) => {
+    test('結帳頁 JS 不應有未捕獲例外（含發票 App 初始化）', async ({ page }) => {
       const jsErrors: string[] = []
       page.on('pageerror', (err) => jsErrors.push(err.message))
 
       await page.goto(`${BASE_URL}/checkout/`)
       await page.waitForLoadState('networkidle')
 
-      // 過濾掉已知的非致命錯誤
       const criticalErrors = jsErrors.filter(
         (e) =>
           !e.includes('ResizeObserver') &&

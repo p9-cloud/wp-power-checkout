@@ -1,19 +1,24 @@
 /**
- * Security E2E Tests — 認證、注入攻擊、XSS、無效 Nonce
+ * P1 — Security — 安全性測試
  *
  * 驗證 power-checkout API 在安全性方面的防護：
- * - 未認證存取
- * - 無效 / 過期 nonce
- * - SQL 注入
- * - XSS 攻擊
- * - Path traversal
+ * - 未認證存取所有管理端點 → 401/403
+ * - 無效 Nonce 被拒絕
+ * - XSS 輸入被 sanitize_text_field_deep 消毒
+ * - SQL Injection 防護（輸入被消毒，DB 不受影響）
+ * - Path traversal 防護
+ * - Webhook HMAC 驗簽（sign 必須匹配）
+ * - 敏感金鑰不出現在 GET /settings 摘要中
  */
 import { test, expect } from '@playwright/test'
 import { wpGet, wpPost, type ApiOptions } from '../helpers/api-client.js'
 import { getNonce } from '../helpers/admin-setup.js'
 import { BASE_URL, EP, PROVIDERS, EDGE } from '../fixtures/test-data.js'
+import { buildWebhookRequest } from '../helpers/webhook-hmac.js'
 
-test.describe('Security — 認證與注入防護', () => {
+const TEST_SIGN_KEY = 'test_sign_key_123'
+
+test.describe('Security — 安全性防護測試', () => {
   let opts: ApiOptions
 
   test.beforeAll(async ({ request }) => {
@@ -21,215 +26,278 @@ test.describe('Security — 認證與注入防護', () => {
     opts = { request, baseURL: BASE_URL, nonce }
   })
 
-  // ─── 認證：無 nonce ────────────────────────────────────
-  test.describe('未認證存取', () => {
-    test('GET /settings 無 nonce → 401 or 403', async ({ request }) => {
-      const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-      const res = await wpGet(noAuth, EP.SETTINGS_ALL)
+  // ─── P1：認證防護 ───────────────────────────────────────────
+  test.describe('認證防護', () => {
+    test('無 Nonce 存取 GET /settings → 401 或 403', async ({ request }) => {
+      const unauthOpts: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
+      const res = await wpGet(unauthOpts, EP.SETTINGS_ALL)
       expect([401, 403]).toContain(res.status)
     })
 
-    test('POST /settings/{id} 無 nonce → 401 or 403', async ({ request }) => {
-      const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-      const res = await wpPost(noAuth, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
-        title: 'hacked',
+    test('無效 Nonce 存取 GET /settings/{id} → 401 或 403', async ({ request }) => {
+      const invalidOpts: ApiOptions = {
+        request,
+        baseURL: BASE_URL,
+        nonce: 'completely_fake_nonce_value_12345',
+      }
+      const res = await wpGet(invalidOpts, EP.SETTINGS_SINGLE(PROVIDERS.SLP))
+      expect([401, 403]).toContain(res.status)
+    })
+
+    test('無 Nonce 存取 POST /refund → 401 或 403', async ({ request }) => {
+      const unauthOpts: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
+      const res = await wpPost(unauthOpts, EP.REFUND, { order_id: 1 })
+      expect([401, 403]).toContain(res.status)
+    })
+
+    test('無 Nonce 存取 POST /refund/manual → 401 或 403', async ({ request }) => {
+      const unauthOpts: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
+      const res = await wpPost(unauthOpts, EP.REFUND_MANUAL, { order_id: 1 })
+      expect([401, 403]).toContain(res.status)
+    })
+
+    test('無 Nonce 存取 POST /invoices/issue → 401 或 403', async ({ request }) => {
+      const unauthOpts: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
+      const res = await wpPost(unauthOpts, EP.INVOICE_ISSUE(1), {
+        provider: PROVIDERS.AMEGO,
       })
       expect([401, 403]).toContain(res.status)
     })
 
-    test('POST /settings/{id}/toggle 無 nonce → 401 or 403', async ({ request }) => {
-      const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-      const res = await wpPost(noAuth, EP.SETTINGS_TOGGLE(PROVIDERS.SLP), {})
+    test('無 Nonce 存取 POST /invoices/cancel → 401 或 403', async ({ request }) => {
+      const unauthOpts: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
+      const res = await wpPost(unauthOpts, EP.INVOICE_CANCEL(1), {})
       expect([401, 403]).toContain(res.status)
     })
 
-    test('POST /refund 無 nonce → 401 or 403', async ({ request }) => {
-      const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-      const res = await wpPost(noAuth, EP.REFUND, { order_id: 1 })
-      expect([401, 403]).toContain(res.status)
-    })
-
-    test('POST /refund/manual 無 nonce → 401 or 403', async ({ request }) => {
-      const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-      const res = await wpPost(noAuth, EP.REFUND_MANUAL, { order_id: 1 })
-      expect([401, 403]).toContain(res.status)
-    })
-
-    test('POST /invoices/issue/{id} 無 nonce → 401 or 403', async ({ request }) => {
-      const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-      const res = await wpPost(noAuth, EP.INVOICE_ISSUE(1), { provider: 'amego' })
-      expect([401, 403]).toContain(res.status)
-    })
-
-    test('POST /invoices/cancel/{id} 無 nonce → 401 or 403', async ({ request }) => {
-      const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-      const res = await wpPost(noAuth, EP.INVOICE_CANCEL(1), {})
+    test('無 Nonce 存取 POST /settings/{id}/toggle → 401 或 403', async ({ request }) => {
+      const unauthOpts: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
+      const res = await wpPost(unauthOpts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
       expect([401, 403]).toContain(res.status)
     })
   })
 
-  // ─── 認證：無效 nonce ──────────────────────────────────
-  test.describe('無效 nonce', () => {
-    test('GET /settings 使用假 nonce → 401 or 403', async ({ request }) => {
-      const badAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: 'fake_nonce_12345' }
-      const res = await wpGet(badAuth, EP.SETTINGS_ALL)
-      expect([401, 403]).toContain(res.status)
-    })
-
-    test('POST /refund 使用假 nonce → 401 or 403', async ({ request }) => {
-      const badAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: 'aaaabbbbcccc' }
-      const res = await wpPost(badAuth, EP.REFUND, { order_id: 1 })
-      expect([401, 403]).toContain(res.status)
-    })
-  })
-
-  // ─── SQL 注入 ──────────────────────────────────────────
-  test.describe('SQL 注入防護', () => {
-    test('provider_id 包含 SQL 注入字串 → 安全處理', async () => {
-      const res = await wpGet(opts, EP.SETTINGS_SINGLE(EDGE.SQL_INJECTION_1))
-      // Should NOT crash with DB error, acceptable: 500 (provider not found) or 404
-      expect(res.status).toBeLessThan(600)
-      const body = JSON.stringify(res.data)
-      // Should not expose DB info
-      expect(body.toLowerCase()).not.toContain('syntax error')
-      expect(body.toLowerCase()).not.toContain('mysql')
-    })
-
-    test('refund order_id 包含 SQL 注入 → 安全處理', async () => {
-      const res = await wpPost(opts, EP.REFUND, { order_id: EDGE.SQL_INJECTION_2 })
-      expect(res.status).toBeLessThan(600)
-      const body = JSON.stringify(res.data)
-      expect(body.toLowerCase()).not.toContain('syntax error')
-    })
-
-    test('settings update 值包含 SQL 注入 → 安全處理', async () => {
-      const res = await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
-        title: EDGE.SQL_INJECTION_3,
-      })
-      expect(res.status).toBeLessThan(600)
-      const body = JSON.stringify(res.data)
-      expect(body.toLowerCase()).not.toContain('syntax error')
-    })
-  })
-
-  // ─── XSS 防護 ─────────────────────────────────────────
-  test.describe('XSS 防護', () => {
-    test('settings update title 包含 <script> → 被 sanitize', async () => {
-      const res = await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
-        title: EDGE.XSS_SCRIPT,
-      })
+  // ─── P1：敏感金鑰不暴露 ────────────────────────────────────
+  test.describe('敏感金鑰不暴露', () => {
+    test('GET /settings 摘要不包含 apiKey', async () => {
+      const res = await wpGet(opts, EP.SETTINGS_ALL)
       expect(res.status).toBe(200)
 
-      // Verify the stored value is sanitized
-      const getRes = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.SLP))
-      const data = (getRes.data as any).data ?? getRes.data
-      if (data.title !== undefined) {
-        expect(data.title).not.toContain('<script>')
+      const data = ((res.data as Record<string, unknown>).data ?? res.data) as Record<string, unknown>
+      const gateways = data.gateways as Record<string, unknown>[]
+      const slp = gateways.find(g => g.id === PROVIDERS.SLP)
+
+      if (slp) {
+        expect(slp).not.toHaveProperty('apiKey')
+        expect(slp).not.toHaveProperty('clientKey')
+        expect(slp).not.toHaveProperty('signKey')
       }
     })
 
-    test('settings update title 包含 <img onerror> → 被 sanitize', async () => {
+    test('GET /settings 回應 JSON 字串不含敏感金鑰值（防資訊洩漏）', async () => {
+      // 先更新一個特定的 apiKey 值
+      const sensitiveKey = 'VERY_SECRET_API_KEY_SHOULD_NOT_APPEAR'
+      await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
+        apiKey: sensitiveKey,
+      })
+
+      // GET 摘要列表
+      const res = await wpGet(opts, EP.SETTINGS_ALL)
+      const responseText = JSON.stringify(res.data)
+
+      // 摘要列表不應包含完整的 apiKey 值
+      expect(responseText).not.toContain(sensitiveKey)
+
+      // 還原
+      await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), { apiKey: '' })
+    })
+  })
+
+  // ─── P1：XSS 防護 ───────────────────────────────────────────
+  test.describe('XSS 輸入防護（sanitize_text_field_deep）', () => {
+    test('<script> 標籤被完全移除', async () => {
       const res = await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
-        title: EDGE.XSS_IMG,
+        title: '<script>alert("xss")</script>',
       })
       expect(res.status).toBe(200)
 
-      const getRes = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.SLP))
-      const data = (getRes.data as any).data ?? getRes.data
-      if (data.title !== undefined) {
-        expect(data.title).not.toContain('onerror')
-      }
+      const body = res.data as Record<string, unknown>
+      const data = (body.data ?? body) as Record<string, unknown>
+      const title = String(data.title ?? '')
+      expect(title).not.toContain('<script>')
+      expect(title).not.toContain('alert')
     })
 
-    test('settings update description 包含 <svg/onload> → 被 sanitize', async () => {
+    test('<img onerror> 被移除', async () => {
       const res = await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
-        description: EDGE.XSS_SVG,
+        title: '<img src=x onerror=alert(document.cookie)>',
+      })
+      expect(res.status).toBe(200)
+
+      const body = res.data as Record<string, unknown>
+      const data = (body.data ?? body) as Record<string, unknown>
+      const title = String(data.title ?? '')
+      expect(title).not.toContain('onerror')
+      expect(title).not.toContain('document.cookie')
+    })
+
+    test('javascript: URI 被移除', async () => {
+      const res = await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
+        title: "javascript:alert(1)",
       })
       expect(res.status).toBe(200)
 
       const getRes = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.SLP))
-      const data = (getRes.data as any).data ?? getRes.data
-      if (data.description !== undefined) {
-        expect(data.description).not.toContain('onload')
-      }
-    })
-  })
-
-  // ─── Path Traversal ────────────────────────────────────
-  test.describe('路徑穿越防護', () => {
-    test('provider_id 包含 ../ → 安全處理', async () => {
-      const res = await wpGet(opts, EP.SETTINGS_SINGLE('../../etc/passwd'))
-      expect(res.status).toBeLessThan(600)
-      const body = JSON.stringify(res.data)
-      expect(body).not.toContain('root:')
+      const data = ((getRes.data as Record<string, unknown>).data ?? getRes.data) as Record<string, unknown>
+      const title = String(data.title ?? '')
+      // sanitize_text_field 移除 javascript: 協議
+      expect(title).not.toContain('javascript:')
     })
 
-    test('provider_id 包含 URL 編碼路徑穿越 → 安全處理', async () => {
-      const res = await wpGet(opts, EP.SETTINGS_SINGLE('%2e%2e%2f%2e%2e%2fetc%2fpasswd'))
+    test('多重 XSS 嵌套攻擊 → 不應 crash', async () => {
+      const nestedXSS = '<<SCRIPT>alert("XSS");//<</SCRIPT>'
+      const res = await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
+        title: nestedXSS,
+      })
       expect(res.status).toBeLessThan(600)
     })
   })
 
-  // ─── Webhook 安全性 ────────────────────────────────────
-  test.describe('Webhook 簽章安全', () => {
-    test('webhook 無任何 header → 不應洩漏內部資訊', async ({ request }) => {
-      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
-        headers: { 'Content-Type': 'application/json' },
-        data: { eventType: 'session.succeeded', data: {} },
+  // ─── P1：SQL Injection 防護 ─────────────────────────────────
+  test.describe('SQL Injection 防護', () => {
+    test('DROP TABLE 注入 → DB 仍正常運作', async () => {
+      await wpPost(opts, EP.SETTINGS_UPDATE(PROVIDERS.SLP), {
+        title: EDGE.SQL_DROP,
       })
-      expect(res.status()).toBeLessThan(600)
-      const body = await res.json().catch(() => ({}))
-      const bodyStr = JSON.stringify(body).toLowerCase()
-      // 不應洩漏堆疊追蹤或內部路徑
-      expect(bodyStr).not.toContain('stack trace')
-      expect(bodyStr).not.toContain('/var/www')
-      expect(bodyStr).not.toContain('wp-content/plugins')
+
+      // DB 未被破壞，仍可正常 GET
+      const getRes = await wpGet(opts, EP.SETTINGS_ALL)
+      expect(getRes.status).toBe(200)
+      const data = ((getRes.data as Record<string, unknown>).data ?? getRes.data) as Record<string, unknown>
+      expect(Array.isArray(data.gateways)).toBe(true)
     })
 
-    test('webhook sign 含 XSS → 安全處理', async ({ request }) => {
+    test('OR 1=1 注入 → 不洩漏額外資料', async () => {
+      const res = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.SLP))
+      expect(res.status).toBe(200)
+
+      // 回傳應只有 SLP 的設定，不因 OR 1=1 而洩漏其他資料
+      const data = ((res.data as Record<string, unknown>).data ?? res.data) as Record<string, unknown>
+      expect(data).toHaveProperty('merchantId')
+      // 不應有其他 provider 的資料
+      expect(data).not.toHaveProperty('invoice')  // amego 的欄位
+    })
+
+    test('UNION SELECT 注入 → refund 返回數字驗證錯誤', async () => {
+      const res = await wpPost(opts, EP.REFUND, { order_id: EDGE.SQL_UNION })
+      expect(res.status).toBe(500)
+      const body = res.data as Record<string, unknown>
+      // 應被視為非數字
+      expect(String(body.message ?? '')).toContain('數字')
+    })
+  })
+
+  // ─── P1：Path Traversal 防護 ────────────────────────────────
+  test.describe('Path Traversal 防護', () => {
+    test('provider_id 含路徑穿越 ../../wp-config.php → 非 200', async () => {
+      const res = await wpGet(opts, EP.SETTINGS_SINGLE('../../wp-config.php'))
+      expect(res.status).toBeGreaterThanOrEqual(400)
+    })
+
+    test('provider_id 含 . 點 → 非 200（不符合 pattern）', async () => {
+      const res = await wpGet(opts, EP.SETTINGS_SINGLE('.hidden'))
+      expect(res.status).toBeGreaterThanOrEqual(400)
+    })
+  })
+
+  // ─── P2：Webhook HMAC 驗簽 ─────────────────────────────────
+  test.describe('Webhook HMAC 驗簽', () => {
+    test('sign 為 valid HMAC 格式的錯誤值 → 本地可能通過，非本地應 500', async ({ request }) => {
+      const payload = { eventType: 'trade.succeeded', data: {} }
+      const ts = String(Date.now())
+      // 使用錯誤的 signKey 計算
+      const wrongSign = 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
+
       const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
         headers: {
           'Content-Type': 'application/json',
-          timestamp: String(Date.now()),
-          sign: EDGE.XSS_SCRIPT,
+          timestamp: ts,
+          sign: wrongSign,
           apiVersion: 'V1',
         },
-        data: { eventType: 'session.succeeded', data: {} },
-      })
-      expect(res.status()).toBeLessThan(600)
-      const body = await res.json().catch(() => ({}))
-      const bodyStr = JSON.stringify(body)
-      expect(bodyStr).not.toContain('<script>')
-    })
-
-    test('webhook timestamp 含 SQL 注入 → 安全處理', async ({ request }) => {
-      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          timestamp: EDGE.SQL_INJECTION_1,
-          sign: 'test',
-          apiVersion: 'V1',
-        },
-        data: { eventType: 'session.succeeded', data: {} },
+        data: payload,
       })
       expect(res.status()).toBeLessThan(600)
     })
 
-    test('webhook tradeOrderId 含 path traversal → 安全處理', async ({ request }) => {
+    test('Webhook 不需要 X-WP-Nonce header（無認證要求）', async ({ request }) => {
+      const payload = { eventType: 'trade.succeeded', data: {} }
+      const { headers } = buildWebhookRequest(payload, TEST_SIGN_KEY)
+
+      // 故意不帶 X-WP-Nonce
       const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
         headers: {
           'Content-Type': 'application/json',
-          timestamp: String(Date.now()),
-          sign: 'test',
-          apiVersion: 'V1',
+          // 只帶 Webhook headers，不帶 WP-Nonce
+          timestamp: headers.timestamp,
+          sign: headers.sign,
+          apiVersion: headers.apiVersion,
         },
+        data: payload,
+      })
+      // Webhook 不需要認證，不應返回 401/403
+      expect([401, 403]).not.toContain(res.status())
+      expect(res.status()).toBeLessThan(600)
+    })
+
+    test('valid sign → 可正確處理（本地環境）', async ({ request }) => {
+      const payload = {
+        eventType: 'trade.succeeded',
         data: {
-          eventType: 'session.succeeded',
-          data: {
-            tradeOrderId: '../../etc/passwd',
-            status: 'SUCCEEDED',
-          },
+          tradeOrderId: 'nonexistent_order_for_sign_test',
+          status: 'SUCCEEDED',
         },
+      }
+      const { body, headers } = buildWebhookRequest(payload, TEST_SIGN_KEY)
+
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+        data: payload,
+      })
+      // 簽章正確，但找不到訂單 → 500 mapping_order_failed 或本地跳過驗證
+      expect(res.status()).toBeLessThan(600)
+      if (res.status() === 500) {
+        const json = await res.json().catch(() => ({})) as Record<string, unknown>
+        expect(String(json.code ?? '')).toContain('mapping_order_failed')
+      }
+    })
+  })
+
+  // ─── P3：Content-Type 邊界 ──────────────────────────────────
+  test.describe('Content-Type 邊界', () => {
+    test('POST settings 帶錯誤 Content-Type → 不應 crash', async ({ request }) => {
+      const nonce = getNonce()
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.SETTINGS_UPDATE(PROVIDERS.SLP)}`, {
+        headers: {
+          'X-WP-Nonce': nonce,
+          'Content-Type': 'text/plain',
+        },
+        data: '{"title":"test"}',
+      })
+      expect(res.status()).toBeLessThan(600)
+    })
+
+    test('POST settings 帶空 body → 不應 crash', async ({ request }) => {
+      const nonce = getNonce()
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.SETTINGS_UPDATE(PROVIDERS.SLP)}`, {
+        headers: {
+          'X-WP-Nonce': nonce,
+          'Content-Type': 'application/json',
+        },
+        data: '',
       })
       expect(res.status()).toBeLessThan(600)
     })

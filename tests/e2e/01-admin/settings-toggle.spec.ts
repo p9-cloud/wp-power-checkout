@@ -1,10 +1,14 @@
 /**
- * POST /power-checkout/v1/settings/{provider_id}/toggle — 開關服務
+ * P0 — POST /power-checkout/v1/settings/{provider_id}/toggle — 開關服務
  *
- * Based on: spec/features/開關服務.feature
- * - 未登入 → 401
- * - 切換 enabled yes → no（禁用成功）
- * - 切換 enabled no → yes（啟用成功）
+ * 依據：spec/features/Settings/開關服務.feature
+ *
+ * 測試情境：
+ * - 未登入 → 401/403
+ * - toggle amego yes → no（禁用成功，message 包含「禁用成功」，data 為 provider_id）
+ * - toggle SLP no → yes（啟用成功，message 包含「啟用成功」）
+ * - 連續兩次 toggle 回到原始狀態（冪等性驗證）
+ * - 邊界：不存在的 provider_id → 非 200
  */
 import { test, expect } from '@playwright/test'
 import { wpGet, wpPost, type ApiOptions } from '../helpers/api-client.js'
@@ -19,73 +23,102 @@ test.describe('POST /settings/{provider_id}/toggle — 開關服務', () => {
     opts = { request, baseURL: BASE_URL, nonce }
   })
 
-  // ─── 前置：必須具備管理員權限 ──────────────────────────
-  test('未登入的訪客無法切換服務 → 401', async ({ request }) => {
-    const noAuth: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
-    const res = await wpPost(noAuth, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
+  // ─── P1：未授權存取 ─────────────────────────────────────────
+  test('未登入的訪客無法切換服務 → 401 或 403', async ({ request }) => {
+    const unauthOpts: ApiOptions = { request, baseURL: BASE_URL, nonce: '' }
+    const res = await wpPost(unauthOpts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
     expect([401, 403]).toContain(res.status)
   })
 
-  // ─── 後置：切換 enabled ────────────────────────────────
-  test('toggle amego 會切換 enabled 狀態', async () => {
-    // 先取得目前狀態
+  // ─── P0：Amego toggle 切換邏輯 ─────────────────────────────
+  test('toggle amego：enabled 在 yes/no 之間切換', async () => {
+    // 讀取目前狀態
     const before = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
     expect(before.status).toBe(200)
-    const dataBefore = (before.data as any).data ?? before.data
-    const enabledBefore = dataBefore.enabled
+    const dataBefore = ((before.data as Record<string, unknown>).data ?? before.data) as Record<string, unknown>
+    const enabledBefore = dataBefore.enabled as string
+    const expectedAfter = enabledBefore === 'yes' ? 'no' : 'yes'
 
-    // toggle
+    // 執行 toggle
     const toggleRes = await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
     expect(toggleRes.status).toBe(200)
 
-    const toggleBody = toggleRes.data as any
-    // 回應 message 應包含「啟用」或「禁用」
-    if (toggleBody.message) {
-      expect(
-        toggleBody.message.includes('啟用') || toggleBody.message.includes('禁用'),
-      ).toBe(true)
+    const toggleBody = toggleRes.data as Record<string, unknown>
+    expect(toggleBody.code).toBe('success')
+
+    // spec 要求 message 包含「啟用成功」或「禁用成功」
+    const message = toggleBody.message as string
+    if (expectedAfter === 'no') {
+      expect(message).toContain('禁用成功')
+    } else {
+      expect(message).toContain('啟用成功')
     }
 
-    // 驗證狀態確實改變了
+    // spec 要求 data 為 provider_id 字串
+    expect(toggleBody.data).toBe(PROVIDERS.AMEGO)
+
+    // GET 確認狀態已更新
     const after = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
-    expect(after.status).toBe(200)
-    const dataAfter = (after.data as any).data ?? after.data
-    const enabledAfter = dataAfter.enabled
+    const dataAfter = ((after.data as Record<string, unknown>).data ?? after.data) as Record<string, unknown>
+    expect(dataAfter.enabled).toBe(expectedAfter)
 
-    expect(enabledAfter).not.toBe(enabledBefore)
-
-    // Toggle back to restore original state
+    // 還原原始狀態
     await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
   })
 
-  test('toggle SLP 後 enabled 從 yes → no 或 no → yes', async () => {
+  // ─── P0：SLP toggle 切換邏輯 ───────────────────────────────
+  test('toggle SLP：enabled 在 yes/no 之間切換', async () => {
     const before = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.SLP))
     expect(before.status).toBe(200)
-    const dataBefore = (before.data as any).data ?? before.data
+    const dataBefore = ((before.data as Record<string, unknown>).data ?? before.data) as Record<string, unknown>
     const expectedAfter = dataBefore.enabled === 'yes' ? 'no' : 'yes'
 
     const toggleRes = await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.SLP), {})
     expect(toggleRes.status).toBe(200)
 
+    // GET 確認狀態已更新
     const after = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.SLP))
-    const dataAfter = (after.data as any).data ?? after.data
+    const dataAfter = ((after.data as Record<string, unknown>).data ?? after.data) as Record<string, unknown>
     expect(dataAfter.enabled).toBe(expectedAfter)
 
-    // Restore
+    // 還原原始狀態
     await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.SLP), {})
   })
 
-  test('toggle 回應包含 provider_id', async () => {
+  // ─── P2：連續兩次 toggle 回到原始狀態 ─────────────────────
+  test('連續兩次 toggle amego，最終回到原始 enabled 值', async () => {
+    const before = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
+    const dataBefore = ((before.data as Record<string, unknown>).data ?? before.data) as Record<string, unknown>
+    const originalEnabled = dataBefore.enabled as string
+
+    // 第一次 toggle
+    await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
+    // 第二次 toggle（還原）
+    await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
+
+    // 確認回到原始值
+    const after = await wpGet(opts, EP.SETTINGS_SINGLE(PROVIDERS.AMEGO))
+    const dataAfter = ((after.data as Record<string, unknown>).data ?? after.data) as Record<string, unknown>
+    expect(dataAfter.enabled).toBe(originalEnabled)
+  })
+
+  // ─── P1：不存在的 provider_id ──────────────────────────────
+  test('toggle 不存在的 provider → 非 200', async () => {
+    const res = await wpPost(opts, EP.SETTINGS_TOGGLE('nonexistent_provider'), {})
+    // 應回傳錯誤（provider 不在容器中）
+    expect(res.status).toBeGreaterThanOrEqual(400)
+  })
+
+  // ─── P3：toggle 回應結構驗證 ───────────────────────────────
+  test('toggle 回應 data 為 provider_id 字串', async () => {
     const res = await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
     expect(res.status).toBe(200)
 
-    const body = res.data as any
-    const data = body.data ?? body
-    // data should be the provider_id string or contain it
-    const dataStr = typeof data === 'string' ? data : JSON.stringify(data)
-    expect(dataStr).toContain(PROVIDERS.AMEGO)
+    const body = res.data as Record<string, unknown>
+    // spec 明確要求 data 為 provider_id
+    expect(body.data).toBe(PROVIDERS.AMEGO)
 
-    // Restore
+    // 還原
     await wpPost(opts, EP.SETTINGS_TOGGLE(PROVIDERS.AMEGO), {})
   })
 })
