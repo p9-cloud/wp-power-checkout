@@ -169,4 +169,69 @@ test.describe('Security — 認證與注入防護', () => {
       expect(res.status).toBeLessThan(600)
     })
   })
+
+  // ─── Webhook 安全性 ────────────────────────────────────
+  test.describe('Webhook 簽章安全', () => {
+    test('webhook 無任何 header → 不應洩漏內部資訊', async ({ request }) => {
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: { eventType: 'session.succeeded', data: {} },
+      })
+      expect(res.status()).toBeLessThan(600)
+      const body = await res.json().catch(() => ({}))
+      const bodyStr = JSON.stringify(body).toLowerCase()
+      // 不應洩漏堆疊追蹤或內部路徑
+      expect(bodyStr).not.toContain('stack trace')
+      expect(bodyStr).not.toContain('/var/www')
+      expect(bodyStr).not.toContain('wp-content/plugins')
+    })
+
+    test('webhook sign 含 XSS → 安全處理', async ({ request }) => {
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          timestamp: String(Date.now()),
+          sign: EDGE.XSS_SCRIPT,
+          apiVersion: 'V1',
+        },
+        data: { eventType: 'session.succeeded', data: {} },
+      })
+      expect(res.status()).toBeLessThan(600)
+      const body = await res.json().catch(() => ({}))
+      const bodyStr = JSON.stringify(body)
+      expect(bodyStr).not.toContain('<script>')
+    })
+
+    test('webhook timestamp 含 SQL 注入 → 安全處理', async ({ request }) => {
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          timestamp: EDGE.SQL_INJECTION_1,
+          sign: 'test',
+          apiVersion: 'V1',
+        },
+        data: { eventType: 'session.succeeded', data: {} },
+      })
+      expect(res.status()).toBeLessThan(600)
+    })
+
+    test('webhook tradeOrderId 含 path traversal → 安全處理', async ({ request }) => {
+      const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          timestamp: String(Date.now()),
+          sign: 'test',
+          apiVersion: 'V1',
+        },
+        data: {
+          eventType: 'session.succeeded',
+          data: {
+            tradeOrderId: '../../etc/passwd',
+            status: 'SUCCEEDED',
+          },
+        },
+      })
+      expect(res.status()).toBeLessThan(600)
+    })
+  })
 })

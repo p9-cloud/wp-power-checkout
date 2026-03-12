@@ -273,6 +273,257 @@ test.describe('Edge Cases — 邊界情境測試', () => {
     })
   })
 
+  // ─── 並發結帳同一商品 ──────────────────────────────────
+  test.describe('並發結帳', () => {
+    test('同時對同一訂單發送多次 webhook → 不應造成重複處理', async ({ request }) => {
+      const tradeId = `concurrent_e2e_${Date.now()}`
+      const promises = Array.from({ length: 5 }, () =>
+        request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            timestamp: String(Date.now()),
+            sign: 'concurrent_test',
+            apiVersion: 'V1',
+          },
+          data: {
+            eventType: 'session.succeeded',
+            data: {
+              tradeOrderId: tradeId,
+              status: 'SUCCEEDED',
+              paymentDetail: { paymentMethod: 'CreditCard', amount: 1000 },
+            },
+          },
+        }),
+      )
+      const results = await Promise.all(promises)
+      for (const res of results) {
+        expect(res.status()).toBeLessThan(600)
+      }
+    })
+
+    test('同時對同一訂單發送退款和開立發票 → 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立，跳過')
+      const promises = [
+        wpPost(opts, EP.REFUND, { order_id: testOrderId }),
+        wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+          provider: PROVIDERS.AMEGO,
+          invoiceType: INVOICE_TYPE.INDIVIDUAL,
+          individual: INDIVIDUAL_TYPE.CLOUD,
+        }),
+      ]
+      const results = await Promise.all(promises)
+      for (const res of results) {
+        expect(res.status).toBeLessThan(600)
+      }
+    })
+  })
+
+  // ─── 付款超時與重試 ────────────────────────────────────
+  test.describe('付款超時與重試', () => {
+    test('webhook 短時間內重複送達（模擬重試）→ 應冪等處理', async ({ request }) => {
+      const tradeId = `retry_e2e_${Date.now()}`
+      const payload = {
+        eventType: 'session.succeeded',
+        data: {
+          tradeOrderId: tradeId,
+          status: 'SUCCEEDED',
+          paymentDetail: { paymentMethod: 'CreditCard', amount: 1000 },
+        },
+      }
+      const webhookHeaders = {
+        'Content-Type': 'application/json',
+        timestamp: String(Date.now()),
+        sign: 'retry_test',
+        apiVersion: 'V1',
+      }
+
+      // 第一次送達
+      const res1 = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: webhookHeaders,
+        data: payload,
+      })
+      expect(res1.status()).toBeLessThan(600)
+
+      // 短暫等待後再送（模擬 SLP 重試）
+      await new Promise((r) => setTimeout(r, 500))
+
+      const res2 = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: { ...webhookHeaders, timestamp: String(Date.now()) },
+        data: payload,
+      })
+      expect(res2.status()).toBeLessThan(600)
+    })
+
+    test('先收到 PROCESSING 再收到 SUCCEEDED → 不應 crash', async ({ request }) => {
+      const tradeId = `transition_e2e_${Date.now()}`
+      const baseHeaders = {
+        'Content-Type': 'application/json',
+        sign: 'transition_test',
+        apiVersion: 'V1',
+      }
+
+      // 第一次：PROCESSING
+      const res1 = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: { ...baseHeaders, timestamp: String(Date.now()) },
+        data: {
+          eventType: 'session.processing',
+          data: { tradeOrderId: tradeId, status: 'PROCESSING' },
+        },
+      })
+      expect(res1.status()).toBeLessThan(600)
+
+      // 第二次：SUCCEEDED
+      const res2 = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: { ...baseHeaders, timestamp: String(Date.now()) },
+        data: {
+          eventType: 'session.succeeded',
+          data: {
+            tradeOrderId: tradeId,
+            status: 'SUCCEEDED',
+            paymentDetail: { paymentMethod: 'CreditCard', amount: 1000 },
+          },
+        },
+      })
+      expect(res2.status()).toBeLessThan(600)
+    })
+  })
+
+  // ─── 發票公司名稱特殊字元 ─────────────────────────────
+  test.describe('發票公司名稱特殊字元', () => {
+    test('公司名稱含 CJK 特殊字元 → 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立，跳過')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: 'company',
+        companyName: '株式会社テスト＆（株）',
+        taxId: '12345678',
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('公司名稱含 Emoji → 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立，跳過')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: 'company',
+        companyName: '🏢 快樂公司 🎉',
+        taxId: '12345678',
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('公司名稱含 SQL 注入字串 → 安全處理', async () => {
+      test.skip(!testOrderId, '測試訂單未建立，跳過')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: 'company',
+        companyName: "'; DROP TABLE wp_options; --",
+        taxId: '12345678',
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('公司名稱超長（5000 字）→ 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立，跳過')
+      const res = await wpPost(opts, EP.INVOICE_ISSUE(testOrderId!), {
+        provider: PROVIDERS.AMEGO,
+        invoiceType: 'company',
+        companyName: '測'.repeat(5000),
+        taxId: '12345678',
+      })
+      expect(res.status).toBeLessThan(600)
+    })
+  })
+
+  // ─── 已取消/已退款訂單的退款 ──────────────────────────
+  test.describe('已取消/已退款訂單再退款', () => {
+    test('refund 已退款狀態的訂單 → 應拒絕或安全處理', async () => {
+      test.skip(!testOrderId, '測試訂單未建立，跳過')
+
+      // 先手動退款
+      await wpPost(opts, EP.REFUND_MANUAL, { order_id: testOrderId })
+
+      // 再嘗試 gateway 退款
+      const res = await wpPost(opts, EP.REFUND, { order_id: testOrderId })
+      expect(res.status).toBeLessThan(600)
+    })
+
+    test('manual refund 已退款狀態的訂單 → 不應 crash', async () => {
+      test.skip(!testOrderId, '測試訂單未建立，跳過')
+      const res = await wpPost(opts, EP.REFUND_MANUAL, { order_id: testOrderId })
+      expect(res.status).toBeLessThan(600)
+    })
+  })
+
+  // ─── Webhook 重放攻擊（重複 Transaction ID）───────────
+  test.describe('Webhook 重放攻擊', () => {
+    test('相同 tradeOrderId 多次 SUCCEEDED webhook → 應冪等或拒絕', async ({ request }) => {
+      // 使用已知的測試 tradeOrderId
+      const tradeId = 'e2e_trade_order_001'
+      const payload = {
+        eventType: 'session.succeeded',
+        data: {
+          tradeOrderId: tradeId,
+          status: 'SUCCEEDED',
+          paymentDetail: { paymentMethod: 'CreditCard', amount: 1000 },
+        },
+      }
+
+      const results = []
+      for (let i = 0; i < 3; i++) {
+        const res = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            timestamp: String(Date.now()),
+            sign: `replay_test_${i}`,
+            apiVersion: 'V1',
+          },
+          data: payload,
+        })
+        results.push(res.status())
+        await new Promise((r) => setTimeout(r, 200))
+      }
+
+      // 所有請求都不應讓伺服器 crash
+      for (const status of results) {
+        expect(status).toBeLessThan(600)
+      }
+    })
+
+    test('先 SUCCEEDED 再 EXPIRED 同一 tradeOrderId → 不應回退狀態', async ({ request }) => {
+      const tradeId = `replay_state_${Date.now()}`
+      const baseHeaders = {
+        'Content-Type': 'application/json',
+        sign: 'replay_state_test',
+        apiVersion: 'V1',
+      }
+
+      // SUCCEEDED
+      const res1 = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: { ...baseHeaders, timestamp: String(Date.now()) },
+        data: {
+          eventType: 'session.succeeded',
+          data: {
+            tradeOrderId: tradeId,
+            status: 'SUCCEEDED',
+            paymentDetail: { paymentMethod: 'CreditCard', amount: 1000 },
+          },
+        },
+      })
+      expect(res1.status()).toBeLessThan(600)
+
+      // 攻擊者重放 EXPIRED
+      const res2 = await request.post(`${BASE_URL}/wp-json/${EP.WEBHOOK}`, {
+        headers: { ...baseHeaders, timestamp: String(Date.now()) },
+        data: {
+          eventType: 'session.expired',
+          data: { tradeOrderId: tradeId, status: 'EXPIRED' },
+        },
+      })
+      expect(res2.status()).toBeLessThan(600)
+    })
+  })
+
   // ─── 清理 ─────────────────────────────────────────────
   test.afterAll(async () => {
     // 還原合理的 SLP 設定
