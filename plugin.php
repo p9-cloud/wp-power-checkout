@@ -3,7 +3,7 @@
  * Plugin Name:       Power Checkout
  * Plugin URI:        https://github.com/p9-cloud/wp-power-checkout
  * Description:       串接 Shoplone Payment 金流、光貿電子發票
- * Version:           1.0.28
+ * Version:           1.0.29
  * Requires at least: 5.7
  * Requires PHP:      8.1
  * Author:            J7
