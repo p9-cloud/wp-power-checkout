@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Power Checkout
- * Plugin URI:        https://github.com/j7-dev/wp-power-checkout
+ * Plugin URI:        https://github.com/p9-cloud/wp-power-checkout
  * Description:       串接 Shoplone Payment 金流、光貿電子發票
  * Version:           1.0.28
  * Requires at least: 5.7
@@ -55,7 +55,7 @@ final class Plugin {
 		$this->init(
 			[
 				'app_name'         => 'Power Checkout',
-				'github_repo'      => 'https://github.com/j7-dev/wp-power-checkout',
+				'github_repo'      => 'https://github.com/p9-cloud/wp-power-checkout',
 				'callback'         => [ Bootstrap::class, 'instance' ],
 				'submenu_callback' => [ __CLASS__, 'redirect_to_wc_setting' ],
 				'lc'               => 'ZmFsc2',
