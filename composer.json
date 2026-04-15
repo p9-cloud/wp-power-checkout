@@ -17,6 +17,11 @@
 			"J7\\PowerCheckoutTests\\": "inc/tests/"
 		}
 	},
+	"autoload-dev": {
+		"psr-4": {
+			"Tests\\Integration\\": "tests/Integration/"
+		}
+	},
 	"extra": {
 		"mozart": {
 			"dep_namespace": "PowerCheckout\\",
