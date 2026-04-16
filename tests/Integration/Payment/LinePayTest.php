@@ -12,6 +12,8 @@ use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook\Ord
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Components\Webhook\Payment as WebhookPayment;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\RedirectSettingsDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Trade\Payment\PaymentDTO;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Body;
+use J7\PowerCheckout\Domains\Payment\ShoplinePayment\DTOs\Webhooks\Payment as WebhookPaymentDTO;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Managers\StatusManager;
 use J7\PowerCheckout\Domains\Payment\ShoplinePayment\Shared\Enums\PaymentMethod;
 use Tests\Integration\TestCase;
@@ -211,6 +213,202 @@ final class LinePayTest extends TestCase {
 
 		// Then: 訂單狀態變更為 cancelled
 		$this->assert_order_status( $order, 'cancelled' );
+	}
+
+	// ========== 快樂路徑：Webhook Body DTO 解析 ==========
+
+	/**
+	 * @test
+	 * @group happy
+	 */
+	public function test_LinePay_trade_succeeded_Body_DTO_正確路由到Payment_DTO(): void {
+		// Given: 一個 LINE Pay trade.succeeded 的 webhook body
+		$body_data = [
+			'id'      => 'EVT_LINEPAY_BODY_TEST_001',
+			'type'    => 'trade.succeeded',
+			'created' => time(),
+			'data'    => [
+				'referenceOrderId' => 'REF_BODY_001',
+				'tradeOrderId'     => 'LINEPAY_BODY_001',
+				'status'           => 'SUCCEEDED',
+				'order'            => [
+					'merchantId'       => 'MERCHANT_TEST',
+					'referenceOrderId' => 'REF_BODY_001',
+					'createTime'       => time(),
+					'amount'           => [ 'value' => 100000, 'currency' => 'TWD' ],
+					'customer'         => [
+						'referenceCustomerId' => 'C1',
+						'customerId'          => 'SC1',
+					],
+				],
+				'payment'          => [
+					'paymentMethod'   => 'LinePay',
+					'paymentBehavior' => 'Regular',
+					'paidAmount'      => [ 'value' => 100000, 'currency' => 'TWD' ],
+				],
+			],
+		];
+
+		// When: 建立 Body DTO
+		$body = Body::create( $body_data );
+
+		// Then: data 應為 WebhookPaymentDTO 且 paymentMethod 為 LinePay
+		$this->assertInstanceOf( WebhookPaymentDTO::class, $body->data );
+		$this->assertSame( 'trade.succeeded', $body->type );
+		/** @var WebhookPaymentDTO $payment_dto */
+		$payment_dto = $body->data;
+		$this->assertSame( 'LinePay', $payment_dto->payment->paymentMethod );
+		$this->assertSame( 'LINEPAY_BODY_001', $payment_dto->tradeOrderId );
+	}
+
+	/**
+	 * @test
+	 * @group happy
+	 */
+	public function test_LinePay_trade_failed_Body_DTO_正確路由到Payment_DTO(): void {
+		// Given: 一個 LINE Pay trade.failed 的 webhook body
+		$body_data = [
+			'id'      => 'EVT_LINEPAY_FAIL_BODY_001',
+			'type'    => 'trade.failed',
+			'created' => time(),
+			'data'    => [
+				'referenceOrderId' => 'REF_FAIL_001',
+				'tradeOrderId'     => 'LINEPAY_FAIL_001',
+				'status'           => 'FAILED',
+				'order'            => [
+					'merchantId'       => 'MERCHANT_TEST',
+					'referenceOrderId' => 'REF_FAIL_001',
+					'createTime'       => time(),
+					'amount'           => [ 'value' => 100000, 'currency' => 'TWD' ],
+					'customer'         => [
+						'referenceCustomerId' => 'C1',
+						'customerId'          => 'SC1',
+					],
+				],
+				'payment'          => [
+					'paymentMethod'   => 'LinePay',
+					'paymentBehavior' => 'Regular',
+					'paidAmount'      => [ 'value' => 0, 'currency' => 'TWD' ],
+				],
+			],
+		];
+
+		// When: 建立 Body DTO
+		$body = Body::create( $body_data );
+
+		// Then: data 應為 WebhookPaymentDTO 且 status 為 FAILED
+		$this->assertInstanceOf( WebhookPaymentDTO::class, $body->data );
+		$this->assertSame( 'trade.failed', $body->type );
+		/** @var WebhookPaymentDTO $payment_dto */
+		$payment_dto = $body->data;
+		$this->assertSame( 'FAILED', $payment_dto->status );
+	}
+
+	// ========== 快樂路徑：Order Note 與 HTML 輸出 ==========
+
+	/**
+	 * @test
+	 * @group happy
+	 */
+	public function test_LinePay_付款成功_Order_Note包含LINE_Pay(): void {
+		// Given: 一筆 pending 訂單
+		$order = $this->create_wc_order( [ 'status' => 'pending' ] );
+
+		// When: 收到 LINE Pay SUCCEEDED webhook
+		$dto     = $this->make_linepay_payment_dto( 'SUCCEEDED', 'LINEPAY_NOTE_001' );
+		$manager = new StatusManager( $dto, $order );
+		$manager->update_order_status();
+
+		// Then: 訂單備忘錄應包含 LINE Pay 字樣
+		$this->assert_order_note_contains( $order, 'LINE Pay' );
+	}
+
+	/**
+	 * @test
+	 * @group happy
+	 */
+	public function test_LinePay_to_human_html_包含LINE_Pay標籤(): void {
+		// Given: 一個 LINE Pay 成功付款的 PaymentDTO
+		$dto = $this->make_linepay_payment_dto( 'SUCCEEDED' );
+
+		// When: 取得 human-readable HTML
+		$html = $dto->to_human_html();
+
+		// Then: HTML 應包含 LINE Pay 標籤
+		$this->assertStringContainsString( 'LINE Pay', $html );
+		$this->assertStringContainsString( '付款狀態', $html );
+		$this->assertStringContainsString( '付款方式', $html );
+	}
+
+	/**
+	 * @test
+	 * @group happy
+	 */
+	public function test_LinePay_get_payment_method_回傳LINEPAY枚舉(): void {
+		// Given: 一個 LINE Pay PaymentDTO
+		$dto = $this->make_linepay_payment_dto( 'SUCCEEDED' );
+
+		// When: 取得 payment method 枚舉
+		$method = $dto->get_payment_method();
+
+		// Then: 應為 PaymentMethod::LINEPAY
+		$this->assertSame( PaymentMethod::LINEPAY, $method );
+	}
+
+	/**
+	 * @test
+	 * @group happy
+	 */
+	public function test_LinePay_is_successed_or_failed_成功狀態回傳true(): void {
+		// Given: 一個 SUCCEEDED 狀態的 LINE Pay webhook DTO
+		$dto = WebhookPaymentDTO::create( [
+			'referenceOrderId' => 'REF_001',
+			'tradeOrderId'     => 'TRADE_001',
+			'status'           => 'SUCCEEDED',
+			'order'            => [
+				'merchantId'       => 'M1',
+				'referenceOrderId' => 'REF_001',
+				'createTime'       => time(),
+				'amount'           => [ 'value' => 100000, 'currency' => 'TWD' ],
+				'customer'         => [ 'referenceCustomerId' => 'C1', 'customerId' => 'SC1' ],
+			],
+			'payment'          => [
+				'paymentMethod'   => 'LinePay',
+				'paymentBehavior' => 'Regular',
+				'paidAmount'      => [ 'value' => 100000, 'currency' => 'TWD' ],
+			],
+		] );
+
+		// Then: is_successed_or_failed 應回傳 true
+		$this->assertTrue( $dto->is_successed_or_failed() );
+	}
+
+	/**
+	 * @test
+	 * @group happy
+	 */
+	public function test_LinePay_is_successed_or_failed_失敗狀態回傳true(): void {
+		// Given: 一個 FAILED 狀態的 LINE Pay webhook DTO
+		$dto = WebhookPaymentDTO::create( [
+			'referenceOrderId' => 'REF_002',
+			'tradeOrderId'     => 'TRADE_002',
+			'status'           => 'FAILED',
+			'order'            => [
+				'merchantId'       => 'M1',
+				'referenceOrderId' => 'REF_002',
+				'createTime'       => time(),
+				'amount'           => [ 'value' => 100000, 'currency' => 'TWD' ],
+				'customer'         => [ 'referenceCustomerId' => 'C1', 'customerId' => 'SC1' ],
+			],
+			'payment'          => [
+				'paymentMethod'   => 'LinePay',
+				'paymentBehavior' => 'Regular',
+				'paidAmount'      => [ 'value' => 0, 'currency' => 'TWD' ],
+			],
+		] );
+
+		// Then: is_successed_or_failed 應回傳 true
+		$this->assertTrue( $dto->is_successed_or_failed() );
 	}
 
 	// ========== 邊緣案例（Edge Cases） ==========
