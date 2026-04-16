@@ -15,7 +15,7 @@ export function getNonce(): string {
 
 export async function loginAsAdmin(baseURL: string): Promise<string> {
   const browser = await chromium.launch()
-  const context = await browser.newContext()
+  const context = await browser.newContext({ ignoreHTTPSErrors: true })
   const page = await context.newPage()
 
   await context.addCookies([
@@ -28,8 +28,8 @@ export async function loginAsAdmin(baseURL: string): Promise<string> {
   ])
 
   await page.goto(`${baseURL}/wp-login.php`)
-  await page.fill('#user_login', 'admin')
-  await page.fill('#user_pass', 'password')
+  await page.fill('#user_login', 'test')
+  await page.fill('#user_pass', 'YRjUdar!k^HRMwacf!@09X87')
   await page.click('#wp-submit')
   await page.waitForURL('**/wp-admin/**', { timeout: 60_000 })
 

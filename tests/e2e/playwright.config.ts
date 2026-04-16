@@ -14,7 +14,8 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
   ],
   use: {
-    baseURL: 'http://localhost:8891',
+    baseURL: 'https://local-turbo.powerhouse.tw',
+    ignoreHTTPSErrors: true,
     storageState: '.auth/admin.json',
     extraHTTPHeaders: {
       // 預設不帶 Nonce，各測試透過 getNonce() 動態取得

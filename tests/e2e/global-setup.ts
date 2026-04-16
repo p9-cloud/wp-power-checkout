@@ -42,7 +42,7 @@ async function globalSetup(_config: FullConfig) {
 
   const browser = await chromium.launch()
   try {
-    const context = await browser.newContext({ storageState: AUTH_FILE })
+    const context = await browser.newContext({ storageState: AUTH_FILE, ignoreHTTPSErrors: true })
     const apiContext = context.request
 
     const authHeaders = {
@@ -231,6 +231,88 @@ async function globalSetup(_config: FullConfig) {
       console.log(`[Setup] 已開立發票測試訂單已建立: #${orderWI.id}`)
     } else {
       console.warn('[Setup] 建立已開立發票測試訂單失敗:', orderWithInvoiceRes.status())
+    }
+
+    // ── 3f. 建立 LINE Pay 成功付款測試訂單（pending 狀態）───
+    const linePayTradeOrderId = `e2e_linepay_${Date.now()}`
+    const orderLinePayRes = await apiContext.post(
+      `${BASE_URL}/wp-json/wc/v3/orders`,
+      {
+        headers: authHeaders,
+        data: {
+          status: 'pending',
+          payment_method: 'shopline_payment_redirect',
+          payment_method_title: 'Shopline Payment 線上付款',
+          billing: {
+            first_name: '[E2E]',
+            last_name: 'LinePay',
+            email: 'e2e-linepay@example.com',
+            address_1: '[E2E] LINE Pay Test Address',
+            city: 'Taipei',
+            country: 'TW',
+          },
+          line_items: [
+            {
+              name: '[E2E] LINE Pay Test Product',
+              quantity: 1,
+              total: '1000',
+            },
+          ],
+          meta_data: [
+            { key: '_pc_payment_identity', value: linePayTradeOrderId },
+          ],
+        },
+      },
+    )
+
+    if (orderLinePayRes.ok()) {
+      const orderLP = await orderLinePayRes.json()
+      testIds.linePayOrderId = orderLP.id
+      testIds.linePayTradeOrderId = linePayTradeOrderId
+      console.log(`[Setup] LINE Pay 成功付款測試訂單已建立: #${orderLP.id}（tradeOrderId: ${linePayTradeOrderId}）`)
+    } else {
+      console.warn('[Setup] 建立 LINE Pay 成功付款測試訂單失敗:', orderLinePayRes.status())
+    }
+
+    // ── 3g. 建立 LINE Pay 失敗付款測試訂單（pending 狀態）───
+    const linePayFailedTradeOrderId = `e2e_linepay_fail_${Date.now()}`
+    const orderLinePayFailedRes = await apiContext.post(
+      `${BASE_URL}/wp-json/wc/v3/orders`,
+      {
+        headers: authHeaders,
+        data: {
+          status: 'pending',
+          payment_method: 'shopline_payment_redirect',
+          payment_method_title: 'Shopline Payment 線上付款',
+          billing: {
+            first_name: '[E2E]',
+            last_name: 'LinePayFailed',
+            email: 'e2e-linepay-failed@example.com',
+            address_1: '[E2E] LINE Pay Failed Test Address',
+            city: 'Taipei',
+            country: 'TW',
+          },
+          line_items: [
+            {
+              name: '[E2E] LINE Pay Failed Product',
+              quantity: 1,
+              total: '1000',
+            },
+          ],
+          meta_data: [
+            { key: '_pc_payment_identity', value: linePayFailedTradeOrderId },
+          ],
+        },
+      },
+    )
+
+    if (orderLinePayFailedRes.ok()) {
+      const orderLPF = await orderLinePayFailedRes.json()
+      testIds.linePayFailedOrderId = orderLPF.id
+      testIds.linePayFailedTradeOrderId = linePayFailedTradeOrderId
+      console.log(`[Setup] LINE Pay 失敗付款測試訂單已建立: #${orderLPF.id}（tradeOrderId: ${linePayFailedTradeOrderId}）`)
+    } else {
+      console.warn('[Setup] 建立 LINE Pay 失敗付款測試訂單失敗:', orderLinePayFailedRes.status())
     }
 
     await context.dispose()

@@ -10,7 +10,7 @@
  */
 
 // ─── Base URL ────────────────────────────────────────────────
-export const BASE_URL = 'http://localhost:8891'
+export const BASE_URL = 'https://local-turbo.powerhouse.tw'
 
 // ─── API Endpoints ───────────────────────────────────────────
 export const EP = {
@@ -182,6 +182,12 @@ export interface TestIds {
   orderIdWithInvoice?: number
   // tradeOrderId（Webhook 測試用，與 orderId 對應）
   tradeOrderId?: string
+  // LINE Pay 成功付款測試訂單（pending 狀態）
+  linePayOrderId?: number
+  linePayTradeOrderId?: string
+  // LINE Pay 失敗付款測試訂單（pending 狀態）
+  linePayFailedOrderId?: number
+  linePayFailedTradeOrderId?: string
   [key: string]: unknown
 }
 
