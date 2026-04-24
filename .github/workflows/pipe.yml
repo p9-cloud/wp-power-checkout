@@ -14,7 +14,7 @@ concurrency:
 
 # 全域變數：統一管理 Claude 模型版本，避免散落在各 step 寫死
 env:
-  CLAUDE_MODEL: claude-opus-4-6
+  CLAUDE_MODEL: opus
 
 jobs:
   claude:
