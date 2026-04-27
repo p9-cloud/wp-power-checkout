@@ -48,9 +48,9 @@
 | **A** 前置 | eyes reaction → checkout → `resolve_branch`（找 `issue/{N}`，fallback `claude/issue-{N}-*`，都沒有就建新 `issue/{N}`）→ HTTPS → `save_sha` |
 | **B** 模式解析 | `parse_agent` 設 `PIPELINE_MODE`/`FULL_AUTO_MODE`/`PR_MODE` → `fetch_context`（issue 上下文）→ 組 clarifier prompt（`PR_MODE=true` 則跳過） |
 | **C** Clarifier | `claude-retry` composite action，agent=`zenbu-powers:clarifier`，`max_turns=200`(pipeline)/`120`(interactive)；`PR_MODE=true` 跳過 |
-| **D** 橋接 | `detect_specs`（比對 `specs/` diff）→ `dynamic_upgrade`（interactive + 生成 specs → 升級 pipeline_mode）→ 通知留言 |
-| **E** Planner | `specs_available && pipeline_mode` 才跑；agent=`zenbu-powers:planner`，`max_turns=120` |
-| **F** TDD | `planner_ok=true` 才跑；agent=`zenbu-powers:tdd-coordinator`，`max_turns=200` |
+| **D** 橋接 | `detect_specs`（比對 `specs/` diff）→ `dynamic_upgrade`（`PR_MODE!=true` + interactive + 生成 specs → 升級 pipeline_mode）→ 通知留言 |
+| **E** Planner | `PR_MODE!=true && specs_available && pipeline_mode` 才跑；agent=`zenbu-powers:planner`，`max_turns=120` |
+| **F** TDD | `PR_MODE!=true && planner_ok=true` 才跑；agent=`zenbu-powers:tdd-coordinator`，`max_turns=200` |
 | **G** 收尾 | `check_result` 匯整 outputs → 若有變更 `git push --force-with-lease` 兜底推送 |
 
 ---

@@ -326,6 +326,7 @@ jobs:
       - name: 動態升級為管線模式（clarifier 已完成規格生成，或此 issue 有既有 specs）
         id: dynamic_upgrade
         if: |
+          env.PR_MODE != 'true' &&
           env.PIPELINE_MODE == 'false' &&
           (
             steps.detect_specs.outputs.specs_changed == 'true' ||
@@ -357,7 +358,7 @@ jobs:
       # ══════════════════════════════════════════════════
 
       - name: 組合 Planner Prompt
-        if: steps.detect_specs.outputs.specs_available == 'true' && env.PIPELINE_MODE == 'true'
+        if: env.PR_MODE != 'true' && steps.detect_specs.outputs.specs_available == 'true' && env.PIPELINE_MODE == 'true'
         run: |
           ISSUE_NUM="${{ steps.resolve_branch.outputs.issue_num }}"
           {
@@ -371,7 +372,7 @@ jobs:
 
       - name: "Stage 2: Planner"
         id: planner
-        if: steps.detect_specs.outputs.specs_available == 'true' && env.PIPELINE_MODE == 'true'
+        if: env.PR_MODE != 'true' && steps.detect_specs.outputs.specs_available == 'true' && env.PIPELINE_MODE == 'true'
         uses: ./.github/actions/claude-retry
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -385,7 +386,7 @@ jobs:
 
       - name: 偵測 Planner 結果
         id: detect_planner
-        if: steps.detect_specs.outputs.specs_available == 'true' && env.PIPELINE_MODE == 'true'
+        if: env.PR_MODE != 'true' && steps.detect_specs.outputs.specs_available == 'true' && env.PIPELINE_MODE == 'true'
         run: |
           echo "planner_ok=${{ steps.planner.outputs.success }}" >> $GITHUB_OUTPUT
           echo "📋 Planner 結果: ${{ steps.planner.outputs.success }}"
@@ -395,7 +396,7 @@ jobs:
       # ══════════════════════════════════════════════════
 
       - name: 組合 tdd-coordinator Prompt
-        if: steps.detect_planner.outputs.planner_ok == 'true'
+        if: env.PR_MODE != 'true' && steps.detect_planner.outputs.planner_ok == 'true'
         run: |
           ISSUE_NUM="${{ steps.resolve_branch.outputs.issue_num }}"
           {
@@ -409,7 +410,7 @@ jobs:
 
       - name: "Stage 3: TDD Coordinator"
         id: tdd
-        if: steps.detect_planner.outputs.planner_ok == 'true'
+        if: env.PR_MODE != 'true' && steps.detect_planner.outputs.planner_ok == 'true'
         uses: ./.github/actions/claude-retry
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
