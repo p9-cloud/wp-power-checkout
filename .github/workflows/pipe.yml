@@ -242,12 +242,14 @@ jobs:
 
       - name: 偵測 Specs 變更
         id: detect_specs
+        env:
+          ISSUE_NUM: ${{ steps.resolve_branch.outputs.issue_num }}
         run: |
           # Clarifier 是否成功（由 composite action 彙整）
           CLARIFIER_OK="${{ steps.clarifier.outputs.success }}"
 
           # 檢查 1（獨立）：specs/ 目錄是否有可用的規格檔案（跨 run 累積）
-          # 此檢查必須在任何 early exit 之前執行，供下游 dynamic_upgrade 判斷
+          # 此 global 檢查供 Planner/TDD 等下游 step 判斷是否有 specs 可讀取
           SPECS_FILES=$(find specs/ -name '*.feature' -o -name '*.activity' -o -name 'api.yml' -o -name 'erm.dbml' 2>/dev/null | head -1)
           if [ -n "$SPECS_FILES" ]; then
             echo "specs_available=true" >> $GITHUB_OUTPUT
@@ -255,6 +257,25 @@ jobs:
           else
             echo "specs_available=false" >> $GITHUB_OUTPUT
             echo "📦 specs 目錄無可用規格檔案"
+          fi
+
+          # 檢查 1b（issue-scoped）：specs/ 下是否有「此 issue」的規格產出
+          # 搜尋 specs/open-issue/issue-{N}-* (planner 產出) 及 specs/clarify/*issue-{N}* (clarifier 產出)
+          # 僅當 clarifier 在此 run 未產出新 specs 時，作為 dynamic_upgrade 的 fallback
+          # 防止其他 issue 的 specs 觸發不相關 issue 的管線升級
+          ISSUE_SPECS=""
+          if [ -n "$ISSUE_NUM" ]; then
+            ISSUE_SPECS=$(find specs/open-issue/ -name "issue-${ISSUE_NUM}-*" 2>/dev/null | head -1)
+            if [ -z "$ISSUE_SPECS" ]; then
+              ISSUE_SPECS=$(find specs/clarify/ -name "*issue-${ISSUE_NUM}*" 2>/dev/null | head -1)
+            fi
+          fi
+          if [ -n "$ISSUE_SPECS" ]; then
+            echo "issue_specs_available=true" >> $GITHUB_OUTPUT
+            echo "📦 找到此 issue (#${ISSUE_NUM}) 的既有規格：$ISSUE_SPECS"
+          else
+            echo "issue_specs_available=false" >> $GITHUB_OUTPUT
+            echo "📦 無此 issue (#${ISSUE_NUM}) 的既有規格"
           fi
 
           if [ "$CLARIFIER_OK" != "true" ]; then
@@ -295,19 +316,19 @@ jobs:
       # Stage 1→2 橋接：動態升級管線模式
       # ══════════════════════════════════════════════════
 
-      - name: 動態升級為管線模式（clarifier 已完成規格生成，或既有 specs 可用）
+      - name: 動態升級為管線模式（clarifier 已完成規格生成，或此 issue 有既有 specs）
         id: dynamic_upgrade
         if: |
           env.PIPELINE_MODE == 'false' &&
           (
             steps.detect_specs.outputs.specs_changed == 'true' ||
-            steps.detect_specs.outputs.specs_available == 'true'
+            steps.detect_specs.outputs.issue_specs_available == 'true'
           )
         run: |
           if [ "${{ steps.detect_specs.outputs.specs_changed }}" = "true" ]; then
             echo "🔄 Clarifier 已生成 specs，動態升級為管線模式"
           else
-            echo "🔄 偵測到既有 specs（來自先前 run），動態升級為管線模式"
+            echo "🔄 偵測到此 issue 的既有 specs（來自先前 run），動態升級為管線模式"
           fi
           echo "PIPELINE_MODE=true" >> $GITHUB_ENV
           echo "upgraded=true" >> $GITHUB_OUTPUT
