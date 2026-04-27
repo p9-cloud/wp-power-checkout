@@ -246,6 +246,17 @@ jobs:
           # Clarifier 是否成功（由 composite action 彙整）
           CLARIFIER_OK="${{ steps.clarifier.outputs.success }}"
 
+          # 檢查 1（獨立）：specs/ 目錄是否有可用的規格檔案（跨 run 累積）
+          # 此檢查必須在任何 early exit 之前執行，供下游 dynamic_upgrade 判斷
+          SPECS_FILES=$(find specs/ -name '*.feature' -o -name '*.activity' -o -name 'api.yml' -o -name 'erm.dbml' 2>/dev/null | head -1)
+          if [ -n "$SPECS_FILES" ]; then
+            echo "specs_available=true" >> $GITHUB_OUTPUT
+            echo "📦 specs 目錄有可用規格檔案"
+          else
+            echo "specs_available=false" >> $GITHUB_OUTPUT
+            echo "📦 specs 目錄無可用規格檔案"
+          fi
+
           if [ "$CLARIFIER_OK" != "true" ]; then
             echo "specs_changed=false" >> $GITHUB_OUTPUT
             echo "❌ Clarifier 全部失敗，跳過 tdd-coordinator"
@@ -255,14 +266,14 @@ jobs:
           INITIAL_SHA="${{ steps.save_sha.outputs.initial_sha }}"
           CURRENT_SHA=$(git rev-parse HEAD)
 
-          # 檢查 1：是否有任何 commit
+          # 檢查 2：是否有任何 commit
           if [ "$CURRENT_SHA" = "$INITIAL_SHA" ]; then
             echo "specs_changed=false" >> $GITHUB_OUTPUT
             echo "ℹ️ 無任何 commit，clarifier 可能只是提問"
             exit 0
           fi
 
-          # 檢查 2：specs/ 目錄是否有新增或修改
+          # 檢查 3：specs/ 目錄是否有新增或修改
           SPECS_DIFF=$(git diff --name-only "$INITIAL_SHA" HEAD -- 'specs/' || echo "")
           SPECS_UNTRACKED=$(git ls-files --others --exclude-standard -- 'specs/' || echo "")
 
@@ -280,25 +291,24 @@ jobs:
             echo "ℹ️ 無 specs 變更（clarifier 可能只是提問或修改其他檔案）"
           fi
 
-          # 檢查 3：specs/ 目錄是否有可用的規格檔案（跨 run 累積）
-          SPECS_FILES=$(find specs/ -name '*.feature' -o -name '*.activity' -o -name 'api.yml' -o -name 'erm.dbml' 2>/dev/null | head -1)
-          if [ -n "$SPECS_FILES" ]; then
-            echo "specs_available=true" >> $GITHUB_OUTPUT
-            echo "📦 specs 目錄有可用規格檔案"
-          else
-            echo "specs_available=false" >> $GITHUB_OUTPUT
-            echo "📦 specs 目錄無可用規格檔案"
-          fi
-
       # ══════════════════════════════════════════════════
       # Stage 1→2 橋接：動態升級管線模式
       # ══════════════════════════════════════════════════
 
-      - name: 動態升級為管線模式（clarifier 已完成規格生成）
+      - name: 動態升級為管線模式（clarifier 已完成規格生成，或既有 specs 可用）
         id: dynamic_upgrade
-        if: env.PIPELINE_MODE == 'false' && steps.detect_specs.outputs.specs_changed == 'true'
+        if: |
+          env.PIPELINE_MODE == 'false' &&
+          (
+            steps.detect_specs.outputs.specs_changed == 'true' ||
+            steps.detect_specs.outputs.specs_available == 'true'
+          )
         run: |
-          echo "🔄 Clarifier 已生成 specs，動態升級為管線模式"
+          if [ "${{ steps.detect_specs.outputs.specs_changed }}" = "true" ]; then
+            echo "🔄 Clarifier 已生成 specs，動態升級為管線模式"
+          else
+            echo "🔄 偵測到既有 specs（來自先前 run），動態升級為管線模式"
+          fi
           echo "PIPELINE_MODE=true" >> $GITHUB_ENV
           echo "upgraded=true" >> $GITHUB_OUTPUT
 
